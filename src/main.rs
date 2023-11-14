@@ -1,15 +1,8 @@
-use std::{env, fmt};
+use std::env;
 
-use serde::Serialize;
 use serde_json::json;
 
-#[derive(Debug, Serialize)]
-enum BenCodedValue {
-    String(String),
-    I32(i32),
-}
-
-fn decode_bencoded_value(encoded_value: &str) -> Result<BenCodedValue, &str> {
+fn decode_bencoded_value(encoded_value: &str) -> Result<serde_json::Value, &str> {
     // If encoded_value starts with a digit, it's a number
     match encoded_value.split_once(":") {
         Some((count, value)) => {
@@ -20,19 +13,20 @@ fn decode_bencoded_value(encoded_value: &str) -> Result<BenCodedValue, &str> {
             {
                 return Err("Length in string missmatched");
             }
-            return Ok(BenCodedValue::String(value.to_owned()));
+            return Ok(serde_json::Value::String(value.to_string()));
         }
         None => {
             let mut chars = encoded_value.chars();
 
             match chars.next() {
                 Some('i') => {
-                    return Ok(BenCodedValue::I32(
+                    return Ok(serde_json::Value::Number(
                         chars
                             .take_while(|c| c == &'e')
                             .collect::<String>()
                             .parse::<i32>()
-                            .unwrap(),
+                            .unwrap()
+                            .into(),
                     ))
                 }
                 _ => return Err(""),
