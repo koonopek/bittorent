@@ -1,7 +1,8 @@
-use serde_json;
 use std::env;
 
-type BenCodedValue = serde_json::Value;
+use serde_json::{self, json};
+
+type BenCodedValue = String | i32;
 
 fn decode_bencoded_value(encoded_value: &str) -> Result<BenCodedValue, &str> {
     // If encoded_value starts with a digit, it's a number
@@ -14,18 +15,22 @@ fn decode_bencoded_value(encoded_value: &str) -> Result<BenCodedValue, &str> {
             {
                 return Err("Length in string missmatched");
             }
-            return Ok(serde_json::Value::String(value.to_string()));
+            return Ok(value.to_string());
         }
         None => {
             let mut chars = encoded_value.chars();
-            match (chars.by_ref().next(), chars.by_ref().last()) {
-                (Some('i'), Some('e')) => {
-                    let string = chars.into_iter().collect::<String>();
+
+            match chars.next() {
+                Some('i') => {
                     return Ok(serde_json::Value::Number(
-                        string[1..string.len() - 1].to_owned().parse().unwrap(),
-                    ));
+                        chars
+                            .take_while(|c| c == &'e')
+                            .collect::<String>()
+                            .parse::<i32>()
+                            .unwrap(),
+                    ))
                 }
-                _ => return Err("Integer wrongly formatted"),
+                _ => return Err(""),
             }
         }
     }
