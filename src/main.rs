@@ -1,7 +1,9 @@
 use serde_json;
 use std::env;
 
-fn decode_bencoded_value(encoded_value: &str) -> Result<serde_json::Value, &str> {
+type BenCodedValue = serde_json::Value;
+
+fn decode_bencoded_value(encoded_value: &str) -> Result<BenCodedValue, &str> {
     // If encoded_value starts with a digit, it's a number
     match encoded_value.split_once(":") {
         Some((count, value)) => {
@@ -10,11 +12,22 @@ fn decode_bencoded_value(encoded_value: &str) -> Result<serde_json::Value, &str>
                     .parse::<usize>()
                     .expect("Supplied count cant be parsed to in")
             {
-                return Err("Length missmatched");
+                return Err("Length in string missmatched");
             }
             return Ok(serde_json::Value::String(value.to_string()));
         }
-        _ => return Err("Failed to decode bencoded"),
+        None => {
+            let mut chars = encoded_value.chars();
+            match (chars.by_ref().next(), chars.by_ref().last()) {
+                (Some('i'), Some('e')) => {
+                    let string = chars.into_iter().collect::<String>();
+                    return Ok(serde_json::Value::Number(
+                        string[1..string.len() - 1].to_owned().parse().unwrap(),
+                    ));
+                }
+                _ => return Err("Integer wrongly formatted"),
+            }
+        }
     }
 }
 
