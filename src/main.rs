@@ -24,7 +24,7 @@ fn decode_bencoded_value(encoded_value: &str) -> Result<serde_json::Value, &str>
                     // println!("{}", not_e);
 
                     return Ok(serde_json::Value::Number(
-                        not_e.parse::<i32>().unwrap().into(),
+                        not_e.parse::<i64>().unwrap().into(),
                     ));
                 }
                 _ => return Err(""),
