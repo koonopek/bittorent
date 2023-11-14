@@ -1,8 +1,10 @@
 use std::env;
 
-use serde_json::{self, json};
-
-type BenCodedValue = String | i32;
+#[derive(Debug)]
+enum BenCodedValue {
+    String(String),
+    I32(i32),
+}
 
 fn decode_bencoded_value(encoded_value: &str) -> Result<BenCodedValue, &str> {
     // If encoded_value starts with a digit, it's a number
@@ -15,14 +17,14 @@ fn decode_bencoded_value(encoded_value: &str) -> Result<BenCodedValue, &str> {
             {
                 return Err("Length in string missmatched");
             }
-            return Ok(value.to_string());
+            return Ok(BenCodedValue::String(value.to_owned()));
         }
         None => {
             let mut chars = encoded_value.chars();
 
             match chars.next() {
                 Some('i') => {
-                    return Ok(serde_json::Value::Number(
+                    return Ok(BenCodedValue::I32(
                         chars
                             .take_while(|c| c == &'e')
                             .collect::<String>()
@@ -45,7 +47,7 @@ fn main() {
         // Uncomment this block to pass the first stage
         let encoded_value = &args[2];
         let decoded_value = decode_bencoded_value(encoded_value);
-        println!("{}", decoded_value.unwrap().to_string());
+        println!("{:?}", decoded_value.unwrap());
     } else {
         println!("unknown command: {}", args[1])
     }
