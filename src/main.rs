@@ -1,15 +1,12 @@
 use std::{env, fmt};
 
-#[derive(Debug)]
+use serde::Serialize;
+use serde_json::json;
+
+#[derive(Debug, Serialize)]
 enum BenCodedValue {
     String(String),
     I32(i32),
-}
-
-impl fmt::Display for BenCodedValue {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", "1")
-    }
 }
 
 fn decode_bencoded_value(encoded_value: &str) -> Result<BenCodedValue, &str> {
@@ -53,7 +50,7 @@ fn main() {
         // Uncomment this block to pass the first stage
         let encoded_value = &args[2];
         let decoded_value = decode_bencoded_value(encoded_value);
-        println!("{}", decoded_value.unwrap());
+        println!("{}", json!(decoded_value.unwrap()));
     } else {
         println!("unknown command: {}", args[1])
     }
