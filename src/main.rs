@@ -21,7 +21,7 @@ fn decode_bencoded_value(encoded_value: &str) -> Result<serde_json::Value, &str>
             match chars.next() {
                 Some('i') => {
                     let not_e = chars.take_while(|c| c != &'e').collect::<String>();
-                    println!("{}", not_e);
+                    // println!("{}", not_e);
 
                     return Ok(serde_json::Value::Number(
                         not_e.parse::<i32>().unwrap().into(),
