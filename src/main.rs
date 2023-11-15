@@ -2,12 +2,18 @@ use std::{env, str::Chars};
 
 use serde_json::json;
 
-fn decode_bencoded_value(mut chars: Chars) -> Result<serde_json::Value, &str> {
+#[derive(Debug)]
+enum BenDecodeErrors {
+    StringDecodingError,
+    End,
+    UknownError,
+}
+
+fn decode_bencoded_value(chars: &mut Chars) -> Result<serde_json::Value, BenDecodeErrors> {
     match chars.next() {
         // integer
         Some('i') => {
             let not_e = chars.take_while(|c| c != &'e').collect::<String>();
-            // println!("{}", not_e);
 
             return Ok(serde_json::Value::Number(
                 not_e.parse::<i64>().unwrap().into(),
@@ -20,7 +26,7 @@ fn decode_bencoded_value(mut chars: Chars) -> Result<serde_json::Value, &str> {
 
             let length: usize = match digits.parse() {
                 Ok(number) => number,
-                _ => return Err("Failed to convert string to number, when decoding string"),
+                _ => return Err(BenDecodeErrors::StringDecodingError),
             };
 
             let string: String = chars.take(length).collect();
@@ -30,17 +36,19 @@ fn decode_bencoded_value(mut chars: Chars) -> Result<serde_json::Value, &str> {
         // list
         Some('l') => {
             let mut list = vec![];
-
-            let list_content = chars.by_ref().take_while(|c| c != &'e').collect::<String>();
-
-            while chars.next().is_some() {
-                list.push(decode_bencoded_value(list_content.chars()));
+            loop {
+                match decode_bencoded_value(chars) {
+                    Ok(value) => list.push(value),
+                    Err(BenDecodeErrors::End) => return Ok(serde_json::Value::Array(list)),
+                    _ => return Err(BenDecodeErrors::UknownError),
+                };
             }
-
-            // decode_bencoded_value(chars);
-            return Ok(serde_json::Value::Array(vec![]));
         }
-        _ => return Err(""),
+        // terminator
+        Some('e') => {
+            return Err(BenDecodeErrors::End);
+        }
+        _ => return Err(BenDecodeErrors::UknownError),
     }
 }
 
@@ -52,8 +60,8 @@ fn main() {
     if command == "decode" {
         // Uncomment this block to pass the first stage
         let encoded_value = &args[2];
-        let decoded_value = decode_bencoded_value(encoded_value.chars());
-        println!("{}", json!(decoded_value.unwrap()));
+        let decoded_value = decode_bencoded_value(&mut encoded_value.chars()).unwrap();
+        println!("{}", json!(decoded_value));
     } else {
         println!("unknown command: {}", args[1])
     }
