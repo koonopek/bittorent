@@ -29,6 +29,14 @@ fn decode_bencoded_value(mut chars: Chars) -> Result<serde_json::Value, &str> {
         }
         // list
         Some('l') => {
+            let mut list = vec![];
+
+            let list_content = chars.by_ref().take_while(|c| c != &'e').collect::<String>();
+
+            while chars.next().is_some() {
+                list.push(decode_bencoded_value(list_content.chars()));
+            }
+
             // decode_bencoded_value(chars);
             return Ok(serde_json::Value::Array(vec![]));
         }
