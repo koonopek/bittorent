@@ -1,35 +1,38 @@
-use std::env;
+use std::{env, str::Chars};
 
 use serde_json::json;
 
-fn decode_bencoded_value(encoded_value: &str) -> Result<serde_json::Value, &str> {
-    // If encoded_value starts with a digit, it's a number
-    match encoded_value.split_once(":") {
-        Some((count, value)) => {
-            if value.len()
-                != count
-                    .parse::<usize>()
-                    .expect("Supplied count cant be parsed to in")
-            {
-                return Err("Length in string missmatched");
-            }
-            return Ok(serde_json::Value::String(value.to_string()));
-        }
-        None => {
-            let mut chars = encoded_value.chars();
+fn decode_bencoded_value(mut chars: Chars) -> Result<serde_json::Value, &str> {
+    match chars.next() {
+        // integer
+        Some('i') => {
+            let not_e = chars.take_while(|c| c != &'e').collect::<String>();
+            // println!("{}", not_e);
 
-            match chars.next() {
-                Some('i') => {
-                    let not_e = chars.take_while(|c| c != &'e').collect::<String>();
-                    // println!("{}", not_e);
-
-                    return Ok(serde_json::Value::Number(
-                        not_e.parse::<i64>().unwrap().into(),
-                    ));
-                }
-                _ => return Err(""),
-            }
+            return Ok(serde_json::Value::Number(
+                not_e.parse::<i64>().unwrap().into(),
+            ));
         }
+        // string
+        Some(c) if c.is_digit(10) => {
+            let mut digits: String = chars.by_ref().take_while(|c| c != &':').collect();
+            digits.insert(0, c);
+
+            let length: usize = match digits.parse() {
+                Ok(number) => number,
+                _ => return Err("Failed to convert string to number, when decoding string"),
+            };
+
+            let string: String = chars.take(length).collect();
+
+            return Ok(serde_json::Value::String(string));
+        }
+        // list
+        Some('l') => {
+            // decode_bencoded_value(chars);
+            return Ok(serde_json::Value::Array(vec![]));
+        }
+        _ => return Err(""),
     }
 }
 
@@ -41,7 +44,7 @@ fn main() {
     if command == "decode" {
         // Uncomment this block to pass the first stage
         let encoded_value = &args[2];
-        let decoded_value = decode_bencoded_value(encoded_value);
+        let decoded_value = decode_bencoded_value(encoded_value.chars());
         println!("{}", json!(decoded_value.unwrap()));
     } else {
         println!("unknown command: {}", args[1])
