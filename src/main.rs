@@ -50,8 +50,8 @@ fn decode_bencoded_value(chars: &mut Chars) -> Result<serde_json::Value, BenDeco
             let mut dict: Map<String, serde_json::Value> = Map::new();
             loop {
                 match decode_bencoded_value(chars) {
-                    Ok(key) => match decode_bencoded_value(chars) {
-                        Ok(value) => dict.insert(key.to_string(), value),
+                    Ok(serde_json::Value::String(key)) => match decode_bencoded_value(chars) {
+                        Ok(value) => dict.insert(key, value),
                         _ => return Err(BenDecodeErrors::MissingValueForDictKey),
                     },
                     Err(BenDecodeErrors::End) => return Ok(serde_json::Value::Object(dict)),
