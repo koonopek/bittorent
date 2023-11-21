@@ -33,7 +33,6 @@ fn decode_bencoded_value(chars: &mut Chars) -> Result<serde_json::Value, BenDeco
 
             return Ok(serde_json::Value::String(string));
         }
-
         // list
         Some('l') => {
             let mut list = vec![];
