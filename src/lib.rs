@@ -34,9 +34,10 @@ pub fn decode_bencoded_value(
                 _ => return Err(BenDecodeErrors::StringDecodingError),
             };
 
-            let string: String = String::from_utf8(chars.take(length).collect()).unwrap();
-
-            return Ok(serde_json::Value::String(string));
+            unsafe {
+                let string: String = String::from_utf8_unchecked(chars.take(length).collect());
+                return Ok(serde_json::Value::String(string));
+            }
         }
         // list
         Some(b'l') => {
