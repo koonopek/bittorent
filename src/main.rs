@@ -7,12 +7,11 @@ use std::{
 use bittorrent_starter_rust::{decode_bencoded_value, BenDecodeErrors};
 use serde_json::json;
 
-// fn read_metainfo_file(file_path: &Path) -> Result<serde_json::Value, BenDecodeErrors> {
-//     let content = fs::read(file_path).unwrap();
-//     let content_str = String::from_utf8(content).unwrap();
+fn read_metainfo_file(file_path: &Path) -> Result<serde_json::Value, BenDecodeErrors> {
+    let mut content = fs::read(file_path).unwrap();
 
-//     return decode_bencoded_value(content_str.chars().borrow_mut());
-// }
+    return decode_bencoded_value(&mut content.into_iter());
+}
 
 // Usage: your_bittorrent.sh decode "<encoded_value>"
 fn main() {
@@ -25,9 +24,9 @@ fn main() {
         let decoded_value = decode_bencoded_value(&mut encoded_value).unwrap();
         println!("{}", json!(decoded_value));
     } else if command == "info" {
-        // let file_path = &args[2];
-        // let info = read_metainfo_file(&PathBuf::from(file_path)).unwrap();
-        // println!("{}", json!(info))
+        let file_path = &args[2];
+        let info = read_metainfo_file(&PathBuf::from(file_path)).unwrap();
+        println!("{}", json!(info))
     } else {
         println!("unknown command: {}", args[1])
     }
