@@ -1,10 +1,11 @@
-use std::{env, str::Chars};
+use std::{collections::HashMap, env, str::Chars};
 
-use serde_json::json;
+use serde_json::{json, Map};
 
 #[derive(Debug)]
 enum BenDecodeErrors {
     StringDecodingError,
+    MissingValueForDictKey,
     End,
     UknownError,
 }
@@ -40,6 +41,20 @@ fn decode_bencoded_value(chars: &mut Chars) -> Result<serde_json::Value, BenDeco
                 match decode_bencoded_value(chars) {
                     Ok(value) => list.push(value),
                     Err(BenDecodeErrors::End) => return Ok(serde_json::Value::Array(list)),
+                    _ => return Err(BenDecodeErrors::UknownError),
+                };
+            }
+        }
+        // dict
+        Some('d') => {
+            let mut dict: Map<String, serde_json::Value> = Map::new();
+            loop {
+                match decode_bencoded_value(chars) {
+                    Ok(key) => match decode_bencoded_value(chars) {
+                        Ok(value) => dict.insert(key.to_string(), value),
+                        _ => return Err(BenDecodeErrors::MissingValueForDictKey),
+                    },
+                    Err(BenDecodeErrors::End) => return Ok(serde_json::Value::Object(dict)),
                     _ => return Err(BenDecodeErrors::UknownError),
                 };
             }
