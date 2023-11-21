@@ -27,7 +27,7 @@ fn main() {
         let info = read_metainfo_file(&PathBuf::from(file_path)).unwrap();
 
         print!("Tracker URL:");
-        print!("{}", info.get("announce").unwrap())
+        print!("{}", json!(info.get("announce").unwrap()))
     } else {
         println!("unknown command: {}", args[1])
     }
