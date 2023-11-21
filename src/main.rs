@@ -2,7 +2,6 @@ use std::{
     borrow::BorrowMut,
     env, fs,
     path::{Path, PathBuf},
-    str::Chars,
 };
 
 use bittorrent_starter_rust::{decode_bencoded_value, BenDecodeErrors};

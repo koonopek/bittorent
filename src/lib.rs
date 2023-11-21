@@ -10,32 +10,36 @@ pub enum BenDecodeErrors {
     UknownError,
 }
 
-pub fn decode_bencoded_value(chars: &mut Chars) -> Result<serde_json::Value, BenDecodeErrors> {
+pub fn decode_bencoded_value(
+    chars: &mut impl Iterator<Item = u8>,
+) -> Result<serde_json::Value, BenDecodeErrors> {
     match chars.next() {
         // integer
-        Some('i') => {
-            let not_e = chars.take_while(|c| c != &'e').collect::<String>();
+        Some(b'i') => {
+            let not_e: String =
+                String::from_utf8(chars.take_while(|c| c != &b'e').collect()).unwrap();
 
             return Ok(serde_json::Value::Number(
                 not_e.parse::<i64>().unwrap().into(),
             ));
         }
         // string
-        Some(c) if c.is_digit(10) => {
-            let mut digits: String = chars.by_ref().take_while(|c| c != &':').collect();
-            digits.insert(0, c);
+        Some(c) if c.is_ascii_digit() => {
+            let mut digits: String =
+                String::from_utf8(chars.by_ref().take_while(|c| c != &b':').collect()).unwrap();
+            digits.insert(0, c as char);
 
             let length: usize = match digits.parse() {
                 Ok(number) => number,
                 _ => return Err(BenDecodeErrors::StringDecodingError),
             };
 
-            let string: String = chars.take(length).collect();
+            let string: String = String::from_utf8(chars.take(length).collect()).unwrap();
 
             return Ok(serde_json::Value::String(string));
         }
         // list
-        Some('l') => {
+        Some(b'l') => {
             let mut list = vec![];
             loop {
                 match decode_bencoded_value(chars) {
@@ -46,7 +50,7 @@ pub fn decode_bencoded_value(chars: &mut Chars) -> Result<serde_json::Value, Ben
             }
         }
         // dict
-        Some('d') => {
+        Some(b'd') => {
             let mut dict: Map<String, serde_json::Value> = Map::new();
             loop {
                 match decode_bencoded_value(chars) {
@@ -60,7 +64,7 @@ pub fn decode_bencoded_value(chars: &mut Chars) -> Result<serde_json::Value, Ben
             }
         }
         // terminator
-        Some('e') => {
+        Some(b'e') => {
             return Err(BenDecodeErrors::End);
         }
         _ => return Err(BenDecodeErrors::UknownError),
