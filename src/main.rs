@@ -7,12 +7,12 @@ use std::{
 use bittorrent_starter_rust::{decode_bencoded_value, BenDecodeErrors};
 use serde_json::json;
 
-fn read_metainfo_file(file_path: &Path) -> Result<serde_json::Value, BenDecodeErrors> {
-    let content = fs::read(file_path).unwrap();
-    let content_str = String::from_utf8(content).unwrap();
+// fn read_metainfo_file(file_path: &Path) -> Result<serde_json::Value, BenDecodeErrors> {
+//     let content = fs::read(file_path).unwrap();
+//     let content_str = String::from_utf8(content).unwrap();
 
-    return decode_bencoded_value(content_str.chars().borrow_mut());
-}
+//     return decode_bencoded_value(content_str.chars().borrow_mut());
+// }
 
 // Usage: your_bittorrent.sh decode "<encoded_value>"
 fn main() {
@@ -21,13 +21,13 @@ fn main() {
 
     if command == "decode" {
         // Uncomment this block to pass the first stage
-        let encoded_value = &args[2];
-        let decoded_value = decode_bencoded_value(&mut encoded_value.chars()).unwrap();
+        let encoded_value = args[2].bytes().into_iter();
+        let decoded_value = decode_bencoded_value(&mut encoded_value).unwrap();
         println!("{}", json!(decoded_value));
     } else if command == "info" {
-        let file_path = &args[2];
-        let info = read_metainfo_file(&PathBuf::from(file_path)).unwrap();
-        println!("{}", json!(info))
+        // let file_path = &args[2];
+        // let info = read_metainfo_file(&PathBuf::from(file_path)).unwrap();
+        // println!("{}", json!(info))
     } else {
         println!("unknown command: {}", args[1])
     }
