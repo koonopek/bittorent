@@ -21,7 +21,7 @@ fn main() {
 
     if command == "decode" {
         // Uncomment this block to pass the first stage
-        let encoded_value = args[2].bytes().into_iter();
+        let mut encoded_value = args[2].bytes().into_iter();
         let decoded_value = decode_bencoded_value(&mut encoded_value).unwrap();
         println!("{}", json!(decoded_value));
     } else if command == "info" {
