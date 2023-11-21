@@ -26,7 +26,7 @@ fn main() {
     } else if command == "info" {
         let file_path = &args[2];
         let info = read_metainfo_file(&PathBuf::from(file_path)).unwrap();
-        println!("{}", json!(info))
+        println!("{}", info.is_object())
     } else {
         println!("unknown command: {}", args[1])
     }
