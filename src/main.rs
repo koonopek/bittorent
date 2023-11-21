@@ -1,5 +1,4 @@
 use std::{
-    borrow::BorrowMut,
     env, fs,
     path::{Path, PathBuf},
 };
@@ -8,7 +7,7 @@ use bittorrent_starter_rust::{decode_bencoded_value, BenDecodeErrors};
 use serde_json::json;
 
 fn read_metainfo_file(file_path: &Path) -> Result<serde_json::Value, BenDecodeErrors> {
-    let mut content = fs::read(file_path).unwrap();
+    let content = fs::read(file_path).unwrap();
 
     return decode_bencoded_value(&mut content.into_iter());
 }
@@ -26,7 +25,8 @@ fn main() {
     } else if command == "info" {
         let file_path = &args[2];
         let info = read_metainfo_file(&PathBuf::from(file_path)).unwrap();
-        println!("{}", info.is_object())
+
+        println!("Tracker URL: {}", info.get("announce").unwrap())
     } else {
         println!("unknown command: {}", args[1])
     }
