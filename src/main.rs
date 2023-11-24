@@ -33,14 +33,18 @@ fn main() {
             .unwrap();
 
         let bencoded_info = serde_bencode::to_bytes(&info["info"]).unwrap();
-
         let mut hasher = Sha1::new();
         hasher.update(&bencoded_info);
         let hash = hasher.finalize();
 
+        let pieces_length = info["info"].as_object().unwrap()["pieces length"]
+            .as_u64()
+            .unwrap();
+
         println!("Tracker URL: {}", announce);
         println!("Length: {}", length);
         println!("Info Hash: {}", hex::encode(hash));
+        println!("Pieces Length: {}", pieces_length);
     } else {
         println!("unknown command: {}", args[1])
     }
