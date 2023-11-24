@@ -26,14 +26,14 @@ fn main() {
         let file_path = &args[2];
         let info = read_metainfo_file(&PathBuf::from(file_path)).unwrap();
 
-        print!("{:?}", info["info"].as_object().unwrap()["length"].as_str());
+        print!("{:?}", info["info"].as_object().unwrap()["length"]);
 
         let announce = info["announce"].as_str().unwrap();
-        let length = info["info"].as_object().unwrap()["length"]
-            .as_str()
-            .unwrap();
+        // let length = info["info"].as_object().unwrap()["length"]
+        //     .as_str()
+        //     .unwrap();
 
-        print!("Tracker URL: {} Length: ${}", announce, length);
+        print!("Tracker URL: {} Length: ${}", announce, 10);
     } else {
         println!("unknown command: {}", args[1])
     }
