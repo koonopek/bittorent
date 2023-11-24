@@ -44,7 +44,7 @@ fn main() {
         println!("Tracker URL: {}", announce);
         println!("Length: {}", length);
         println!("Info Hash: {}", hex::encode(hash));
-        println!("Pieces Length: {}", pieces_length);
+        println!("Piece Length: {}", pieces_length);
     } else {
         println!("unknown command: {}", args[1])
     }
