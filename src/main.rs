@@ -37,6 +37,8 @@ fn main() {
         hasher.update(&bencoded_info);
         let hash = hasher.finalize();
 
+        print!("{}", info["info"]);
+
         let pieces_length = info["info"].as_object().unwrap()["pieces length"]
             .as_u64()
             .unwrap();
