@@ -27,7 +27,7 @@ fn main() {
         let info = read_metainfo_file(&PathBuf::from(file_path)).unwrap();
 
         let announce = info["announce"].as_str().unwrap();
-        let length = info["info"]["length"].as_str().unwrap();
+        let length = info["info"].as_str();
 
         print!("Tracker URL: {} Length: ${}", announce, length);
     } else {
