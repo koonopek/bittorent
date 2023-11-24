@@ -37,14 +37,26 @@ fn main() {
         hasher.update(&bencoded_info);
         let hash = hasher.finalize();
 
-        let pieces_length = info["info"].as_object().unwrap()["piece length"]
+        let piece_length = info["info"].as_object().unwrap()["piece length"]
             .as_u64()
             .unwrap();
+
+        let pieces: Vec<_> = info["info"].as_object().unwrap()["pieces"]
+            .as_str()
+            .unwrap()
+            .as_bytes()
+            .chunks(piece_length as usize)
+            .map(|x| hex::encode(x))
+            .collect();
 
         println!("Tracker URL: {}", announce);
         println!("Length: {}", length);
         println!("Info Hash: {}", hex::encode(hash));
-        println!("Piece Length: {}", pieces_length);
+        println!("Piece Length: {}", piece_length);
+        println!("Piece Hashes");
+        for piece in pieces {
+            println!("{}", piece);
+        }
     } else {
         println!("unknown command: {}", args[1])
     }
