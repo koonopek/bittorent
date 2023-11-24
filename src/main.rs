@@ -5,6 +5,7 @@ use std::{
 
 use bittorrent_starter_rust::{decode_bencoded_value, BenDecodeErrors};
 use serde_json::json;
+use sha1::{Digest, Sha1};
 
 fn read_metainfo_file(file_path: &Path) -> Result<serde_json::Value, BenDecodeErrors> {
     let content = fs::read(file_path).unwrap();
@@ -31,7 +32,15 @@ fn main() {
             .as_u64()
             .unwrap();
 
-        print!("Tracker URL: {} Length: {}", announce, length);
+        let bencoded_info = serde_bencode::to_bytes(&info).unwrap();
+
+        let mut hasher = Sha1::new();
+        hasher.update(&bencoded_info);
+        let hash = hasher.finalize();
+
+        println!("Tracker URL: {}", announce);
+        println!("Length: {}", length);
+        println!("Info Hash: {}", hex::encode(hash));
     } else {
         println!("unknown command: {}", args[1])
     }
