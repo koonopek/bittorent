@@ -26,7 +26,7 @@ fn main() {
         let file_path = &args[2];
         let info = read_metainfo_file(&PathBuf::from(file_path)).unwrap();
 
-        print!("{}", info["info"]["length"]);
+        print!("{}", info["info"]);
 
         let announce = info["announce"].as_str().unwrap();
         let length = info["info"].as_str().unwrap();
