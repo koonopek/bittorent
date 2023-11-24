@@ -31,7 +31,7 @@ fn main() {
             .as_u64()
             .unwrap();
 
-        print!("Tracker URL: {} Length: ${}", announce, length);
+        print!("Tracker URL: {} Length: {}", announce, length);
     } else {
         println!("unknown command: {}", args[1])
     }
