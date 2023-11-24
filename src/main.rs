@@ -32,7 +32,7 @@ fn main() {
             .as_u64()
             .unwrap();
 
-        let bencoded_info = serde_bencode::to_bytes(&info).unwrap();
+        let bencoded_info = serde_bencode::to_bytes(&info["info"]).unwrap();
 
         let mut hasher = Sha1::new();
         hasher.update(&bencoded_info);
