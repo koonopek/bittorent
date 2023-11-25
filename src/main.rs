@@ -3,9 +3,6 @@ use std::env;
 use bittorrent_starter_rust::{decode_bencoded_value, get_metafile_info};
 use serde_json::json;
 
-const peer_id: &str = "00112233445566778899";
-const port: &str = "6881";
-
 fn main() {
     let args: Vec<String> = env::args().collect();
     let command = &args[1];
@@ -25,8 +22,8 @@ fn main() {
             .get(info.trackter_url)
             .query(&("info_hash", info.hash))
             .query(&[
-                ("peer_id", peer_id),
-                ("port", port),
+                ("peer_id", "00112233445566778899"),
+                ("port", "6881"),
                 ("uploaded", "0"),
                 ("downloaded", "0"),
             ])
