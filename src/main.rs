@@ -1,13 +1,10 @@
-use std::{
-    env,
-    fmt::Display,
-    fs,
-    path::{Path, PathBuf},
-};
+use std::env;
 
-use bittorrent_starter_rust::{decode_bencoded_value, BenDecodeErrors};
+use bittorrent_starter_rust::{decode_bencoded_value, get_metafile_info};
 use serde_json::json;
-use sha1::{Digest, Sha1};
+
+const peer_id: &str = "00112233445566778899";
+const port: &str = "6881";
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -26,11 +23,21 @@ fn main() {
 
         let response = reqwest::blocking::Client::new()
             .get(info.trackter_url)
-            .query(&[("a", "b")])
+            .query(&("info_hash", info.hash))
+            .query(&[
+                ("peer_id", peer_id),
+                ("port", port),
+                ("uploaded", "0"),
+                ("downloaded", "0"),
+            ])
+            .query(&("left", info.length))
+            .query(&("compact", "1"))
             .send()
             .unwrap();
 
         let body = response.text().unwrap();
+
+        print!("body {}", body);
 
         let iterator = &mut body.as_bytes().iter().copied();
 

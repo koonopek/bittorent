@@ -5,6 +5,7 @@ use std::{
 };
 
 use serde_json::Map;
+use sha1::{Digest, Sha1};
 
 #[derive(Debug)]
 pub enum BenDecodeErrors {
@@ -76,19 +77,19 @@ pub fn decode_bencoded_value(
     }
 }
 
-struct MetaInfoFile {
-    trackter_url: String,
-    length: usize,
-    hash: String,
-    piece_length: usize,
-    piece_hashes: Vec<String>,
+pub struct MetaInfoFile {
+    pub trackter_url: String,
+    pub length: usize,
+    pub hash: Vec<u8>,
+    pub piece_length: usize,
+    pub piece_hashes: Vec<String>,
 }
 
 impl Display for MetaInfoFile {
     fn fmt(&self, _f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         println!("Tracker URL: {}", self.trackter_url);
         println!("Length: {}", self.length);
-        println!("Info Hash: {}", self.hash);
+        println!("Info Hash: {}", hex::encode(&self.hash));
         println!("Piece Length: {}", self.piece_length);
         println!("Piece Hashes");
         for piece in &self.piece_hashes {
@@ -104,7 +105,7 @@ fn read_metainfo_file(file_path: &Path) -> Result<serde_json::Value, BenDecodeEr
     return decode_bencoded_value(&mut content.into_iter());
 }
 
-fn get_metafile_info(args: &Vec<String>) -> MetaInfoFile {
+pub fn get_metafile_info(args: &Vec<String>) -> MetaInfoFile {
     let file_path = &*args[2];
     let info = read_metainfo_file(&PathBuf::from(file_path)).unwrap();
 
@@ -133,7 +134,7 @@ fn get_metafile_info(args: &Vec<String>) -> MetaInfoFile {
     return MetaInfoFile {
         trackter_url: announce.to_string(),
         length: length as usize,
-        hash: hex::encode(hash),
+        hash: hash.to_vec(),
         piece_length: piece_length as usize,
         piece_hashes: pieces,
     };
