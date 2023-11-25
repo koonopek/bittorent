@@ -38,12 +38,16 @@ fn main() {
 
         let iterator = &mut body.iter().copied();
 
-        // let value_serce: String = serde_bencode::from_str(&body).unwrap();
-        // print!("serde: {}", value_serce);
+        let value = decode_bencoded_value(iterator).unwrap();
 
-        let value = decode_bencoded_value(iterator);
+        let encoded_peers: Vec<_> = value.as_object().unwrap()["peers"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|x| x.as_str().unwrap().as_bytes())
+            .collect();
 
-        print!("{}", value.unwrap());
+        print!("{:?}", encoded_peers);
     } else {
         println!("unknown command: {}", args[1])
     }
