@@ -55,7 +55,7 @@ fn main() {
 
             let first_byte_port = *encoded_peer.iter().next().unwrap() as u16;
             let second_byte_port = *encoded_peer.iter().next().unwrap() as u16;
-            let port = (first_byte_port << 8) | second_byte_port;
+            let port = (second_byte_port_byte_port << 8) | first_byte_port;
 
             let peer_address = format!(
                 "{}.{}.{}.{}:{}",
