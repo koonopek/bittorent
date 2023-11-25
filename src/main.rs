@@ -48,14 +48,15 @@ fn main() {
 
         let mut peers = Vec::new();
         for encoded_peer in encoded_peers {
-            let first_octet = encoded_peer.iter().next().unwrap();
-            let second_octet = encoded_peer.iter().next().unwrap();
-            let third_octet = encoded_peer.iter().next().unwrap();
-            let fourth_octet = encoded_peer.iter().next().unwrap();
+            let mut iterator = encoded_peer.iter();
+            let first_octet = iterator.next().unwrap();
+            let second_octet = iterator.next().unwrap();
+            let third_octet = iterator.next().unwrap();
+            let fourth_octet = iterator.next().unwrap();
 
-            let first_byte_port = *encoded_peer.iter().next().unwrap() as u16;
-            let second_byte_port = *encoded_peer.iter().next().unwrap() as u16;
-            let port = (second_byte_port << 8) | first_byte_port;
+            let first_byte_port = *iterator.next().unwrap() as u16;
+            let second_byte_port = *iterator.next().unwrap() as u16;
+            let port = (first_byte_port << 8) | second_byte_port;
 
             let peer_address = format!(
                 "{}.{}.{}.{}:{}",
