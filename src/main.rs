@@ -36,7 +36,7 @@ fn main() {
 
         let body = response.text().unwrap();
 
-        // print!("body {}", body);
+        print!("body {}", body);
 
         let iterator = &mut body.as_bytes().iter().copied();
 
