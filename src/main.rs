@@ -1,4 +1,4 @@
-use std::env;
+use std::{env, io::Write, net::TcpStream};
 
 use bittorrent_starter_rust::{decode_bencoded_value, get_metafile_info};
 use serde_json::json;
@@ -6,6 +6,7 @@ use serde_json::json;
 fn main() {
     let args: Vec<String> = env::args().collect();
     let command = &args[1];
+    let file_path = &args[2];
 
     if command == "decode" {
         // Uncomment this block to pass the first stage
@@ -13,18 +14,33 @@ fn main() {
         let decoded_value = decode_bencoded_value(&mut encoded_value).unwrap();
         println!("{}", json!(decoded_value));
     } else if command == "info" {
-        let info = get_metafile_info(&args);
+        let info = get_metafile_info(file_path);
         print!("{}", info);
     } else if command == "peers" {
-        let info = get_metafile_info(&args);
-        let peers = discover_peers(info).unwrap();
+        let info = get_metafile_info(file_path);
+        let peers = discover_peers(info);
         println!("{:?}", peers);
+    } else if command == "handshake" {
+        let info = get_metafile_info(file_path);
+        let peer = &args[3];
+
+        println!("Connection to peer {}", peer);
+        let mut stream = TcpStream::connect(peer).expect("Failed to connect to peer");
+
+        let mut payload = Vec::with_capacity(29 + 20 + 20);
+        payload.extend_from_slice(b"19BitTorrent protocol\x00\x00\x00\x00\x00\x00\x00\x00");
+        payload.extend(info.hash);
+        payload.extend_from_slice(b"00112233445566778899");
+
+        stream
+            .write_all(&payload)
+            .expect("Failed to write to tcp stream");
     } else {
         println!("unknown command: {}", args[1])
     }
 }
 
-fn discover_peers(info: bittorrent_starter_rust::MetaInfoFile) -> Option<Vec<String>> {
+fn discover_peers(info: bittorrent_starter_rust::MetaInfoFile) -> Vec<String> {
     let info_hash_encoded: String = unsafe { String::from_utf8_unchecked(info.hash) };
     let response = reqwest::blocking::Client::new()
         .get(info.trackter_url)
@@ -48,6 +64,7 @@ fn discover_peers(info: bittorrent_starter_rust::MetaInfoFile) -> Option<Vec<Str
         .as_bytes()
         .chunks(6);
     let mut peers = Vec::new();
+
     for encoded_peer in encoded_peers {
         let mut iterator = encoded_peer.iter();
         let first_octet = iterator.next().unwrap();
@@ -65,7 +82,6 @@ fn discover_peers(info: bittorrent_starter_rust::MetaInfoFile) -> Option<Vec<Str
         );
         peers.push(peer_address);
     }
-    return Some(peers);
 
-    None
+    return peers;
 }

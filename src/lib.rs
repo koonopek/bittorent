@@ -114,8 +114,7 @@ fn read_metainfo_file(file_path: &Path) -> Result<serde_json::Value, BenDecodeEr
     return decode_bencoded_value(&mut content.into_iter());
 }
 
-pub fn get_metafile_info(args: &Vec<String>) -> MetaInfoFile {
-    let file_path = &*args[2];
+pub fn get_metafile_info(file_path: &String) -> MetaInfoFile {
     let info = read_metainfo_file(&PathBuf::from(file_path)).unwrap();
 
     let announce = info["announce"].as_str().unwrap();
