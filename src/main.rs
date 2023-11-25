@@ -28,7 +28,8 @@ fn main() {
         let mut stream = TcpStream::connect(peer).expect("Failed to connect to peer");
 
         let mut payload = Vec::with_capacity(29 + 20 + 20);
-        payload.extend_from_slice(b"19BitTorrent protocol\x00\x00\x00\x00\x00\x00\x00\x00");
+        payload.push(19);
+        payload.extend_from_slice(b"BitTorrent protocol\x00\x00\x00\x00\x00\x00\x00\x00");
         payload.extend(info.hash);
         payload.extend_from_slice(b"00112233445566778899");
 
