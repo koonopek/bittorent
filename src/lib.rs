@@ -12,7 +12,9 @@ pub enum BenDecodeErrors {
     StringDecodingError,
     MissingValueForDictKey,
     End,
-    UknownError,
+    DictError,
+    ListError,
+    UnexepctedChar,
 }
 
 pub fn decode_bencoded_value(
@@ -39,10 +41,9 @@ pub fn decode_bencoded_value(
                 _ => return Err(BenDecodeErrors::StringDecodingError),
             };
 
-            unsafe {
-                let string: String = String::from_utf8_unchecked(chars.take(length).collect());
-                return Ok(serde_json::Value::String(string));
-            }
+            let string: String =
+                unsafe { String::from_utf8_unchecked(chars.take(length).collect()) };
+            return Ok(serde_json::Value::String(string));
         }
         // list
         Some(b'l') => {
@@ -51,7 +52,7 @@ pub fn decode_bencoded_value(
                 match decode_bencoded_value(chars) {
                     Ok(value) => list.push(value),
                     Err(BenDecodeErrors::End) => return Ok(serde_json::Value::Array(list)),
-                    _ => return Err(BenDecodeErrors::UknownError),
+                    _ => return Err(BenDecodeErrors::ListError),
                 };
             }
         }
@@ -65,7 +66,7 @@ pub fn decode_bencoded_value(
                         _ => return Err(BenDecodeErrors::MissingValueForDictKey),
                     },
                     Err(BenDecodeErrors::End) => return Ok(serde_json::Value::Object(dict)),
-                    _ => return Err(BenDecodeErrors::UknownError),
+                    _ => return Err(BenDecodeErrors::DictError),
                 };
             }
         }
@@ -73,7 +74,7 @@ pub fn decode_bencoded_value(
         Some(b'e') => {
             return Err(BenDecodeErrors::End);
         }
-        _ => return Err(BenDecodeErrors::UknownError),
+        _ => return Err(BenDecodeErrors::UnexepctedChar),
     }
 }
 

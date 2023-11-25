@@ -1,4 +1,4 @@
-use std::{env, hash};
+use std::env;
 
 use bittorrent_starter_rust::{decode_bencoded_value, get_metafile_info};
 use serde_json::json;
