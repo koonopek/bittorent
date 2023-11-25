@@ -18,7 +18,7 @@ fn main() {
     } else if command == "peers" {
         let info = get_metafile_info(&args);
 
-        let info_hash_encoded = String::from(""); //serde_urlencoded::to_string(&info.hash).unwrap();
+        let info_hash_encoded = String::from_utf8(info.hash).unwrap();
 
         let response = reqwest::blocking::Client::new()
             .get(info.trackter_url)
