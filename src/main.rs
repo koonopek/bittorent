@@ -42,7 +42,7 @@ fn main() {
 
         let encoded_peers: Vec<_> = value.as_object().unwrap()["peers"]
             .as_array()
-            .unwrap()
+            .expect("peers are array?")
             .iter()
             .map(|x| x.as_str().unwrap().as_bytes())
             .collect();
