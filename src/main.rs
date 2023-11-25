@@ -43,9 +43,27 @@ fn main() {
         let encoded_peers = value.as_object().unwrap()["peers"]
             .as_str()
             .expect("peers can be parse to string")
-            .as_bytes();
+            .as_bytes()
+            .chunks(6);
 
-        print!("{:?}", encoded_peers);
+        let mut peers = Vec::new();
+        for encoded_peer in encoded_peers {
+            let first_octet = encoded_peer.iter().next().unwrap();
+            let second_octet = encoded_peer.iter().next().unwrap();
+            let third_octet = encoded_peer.iter().next().unwrap();
+            let fourth_octet = encoded_peer.iter().next().unwrap();
+
+            let first_byte_port = *encoded_peer.iter().next().unwrap() as u16;
+            let second_byte_port = *encoded_peer.iter().next().unwrap() as u16;
+            let port = (first_byte_port << 8) | second_byte_port;
+
+            let peer_address = format!(
+                "{}.{}.{}.{}:{}",
+                first_octet, second_octet, third_octet, fourth_octet, port
+            );
+            peers.push(peer_address);
+        }
+        print!("{:?}", peers);
     } else {
         println!("unknown command: {}", args[1])
     }
