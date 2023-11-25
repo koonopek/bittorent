@@ -1,3 +1,9 @@
+use std::{
+    fmt::Display,
+    fs,
+    path::{Path, PathBuf},
+};
+
 use serde_json::Map;
 
 #[derive(Debug)]
@@ -68,4 +74,67 @@ pub fn decode_bencoded_value(
         }
         _ => return Err(BenDecodeErrors::UknownError),
     }
+}
+
+struct MetaInfoFile {
+    trackter_url: String,
+    length: usize,
+    hash: String,
+    piece_length: usize,
+    piece_hashes: Vec<String>,
+}
+
+impl Display for MetaInfoFile {
+    fn fmt(&self, _f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        println!("Tracker URL: {}", self.trackter_url);
+        println!("Length: {}", self.length);
+        println!("Info Hash: {}", self.hash);
+        println!("Piece Length: {}", self.piece_length);
+        println!("Piece Hashes");
+        for piece in &self.piece_hashes {
+            println!("{}", piece);
+        }
+        Ok(())
+    }
+}
+
+fn read_metainfo_file(file_path: &Path) -> Result<serde_json::Value, BenDecodeErrors> {
+    let content = fs::read(file_path).unwrap();
+
+    return decode_bencoded_value(&mut content.into_iter());
+}
+
+fn get_metafile_info(args: &Vec<String>) -> MetaInfoFile {
+    let file_path = &*args[2];
+    let info = read_metainfo_file(&PathBuf::from(file_path)).unwrap();
+
+    let announce = info["announce"].as_str().unwrap();
+    let length = info["info"].as_object().unwrap()["length"]
+        .as_u64()
+        .unwrap();
+
+    let bencoded_info = serde_bencode::to_bytes(&info["info"]).unwrap();
+    let mut hasher = Sha1::new();
+    hasher.update(&bencoded_info);
+    let hash = hasher.finalize();
+
+    let piece_length = info["info"].as_object().unwrap()["piece length"]
+        .as_u64()
+        .unwrap();
+
+    let pieces: Vec<_> = info["info"].as_object().unwrap()["pieces"]
+        .as_str()
+        .unwrap()
+        .as_bytes()
+        .chunks(20)
+        .map(|x| hex::encode(x))
+        .collect();
+
+    return MetaInfoFile {
+        trackter_url: announce.to_string(),
+        length: length as usize,
+        hash: hex::encode(hash),
+        piece_length: piece_length as usize,
+        piece_hashes: pieces,
+    };
 }
