@@ -38,9 +38,12 @@ fn main() {
 
         let iterator = &mut body.as_bytes().iter().copied();
 
-        let value = decode_bencoded_value(iterator);
+        let value_serce: &str = serde_bencode::from_str(&body).unwrap();
+        print!("serde: {}", value_serce);
 
-        print!("{}", value.unwrap());
+        // let value = decode_bencoded_value(iterator);
+
+        // print!("{}", value.unwrap());
     } else {
         println!("unknown command: {}", args[1])
     }
