@@ -40,12 +40,10 @@ fn main() {
 
         let value = decode_bencoded_value(iterator).unwrap();
 
-        let encoded_peers: Vec<_> = value.as_object().unwrap()["peers"]
-            .as_array()
-            .expect("peers are array?")
-            .iter()
-            .map(|x| x.as_str().unwrap().as_bytes())
-            .collect();
+        let encoded_peers = value.as_object().unwrap()["peers"]
+            .as_str()
+            .expect("peers can be parse to string")
+            .as_bytes();
 
         print!("{:?}", encoded_peers);
     } else {
