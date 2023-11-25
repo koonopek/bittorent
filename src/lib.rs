@@ -78,7 +78,11 @@ pub fn decode_bencoded_value(
         Some(b'e') => {
             return Err(BenDecodeErrors::End);
         }
-        _ => return Err(BenDecodeErrors::UnexepctedChar),
+        w => {
+            println!("unexpected char");
+            println!("{:?}", w);
+            return Err(BenDecodeErrors::UnexepctedChar);
+        }
     }
 }
 
