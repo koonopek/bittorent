@@ -36,8 +36,6 @@ fn main() {
 
         let body = response.text().unwrap();
 
-        print!("body {}", body);
-
         let iterator = &mut body.as_bytes().iter().copied();
 
         let value = decode_bencoded_value(iterator);
