@@ -66,7 +66,10 @@ pub fn decode_bencoded_value(
                         _ => return Err(BenDecodeErrors::MissingValueForDictKey),
                     },
                     Err(BenDecodeErrors::End) => return Ok(serde_json::Value::Object(dict)),
-                    _ => return Err(BenDecodeErrors::DictError),
+                    W => {
+                        print!("{:?}", W);
+                        return Err(BenDecodeErrors::DictError);
+                    }
                 };
             }
         }
