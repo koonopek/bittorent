@@ -34,16 +34,16 @@ fn main() {
             .send()
             .unwrap();
 
-        let body = response.text().unwrap();
+        let body = response.bytes().unwrap();
 
-        let iterator = &mut body.as_bytes().iter().copied();
+        let iterator = &mut body.iter().copied();
 
-        let value_serce: String = serde_bencode::from_str(&body).unwrap();
-        print!("serde: {}", value_serce);
+        // let value_serce: String = serde_bencode::from_str(&body).unwrap();
+        // print!("serde: {}", value_serce);
 
-        // let value = decode_bencoded_value(iterator);
+        let value = decode_bencoded_value(iterator);
 
-        // print!("{}", value.unwrap());
+        print!("{}", value.unwrap());
     } else {
         println!("unknown command: {}", args[1])
     }
