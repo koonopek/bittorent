@@ -1,4 +1,4 @@
-use std::env;
+use std::{env, hash};
 
 use bittorrent_starter_rust::{decode_bencoded_value, get_metafile_info};
 use serde_json::json;
@@ -18,17 +18,19 @@ fn main() {
     } else if command == "peers" {
         let info = get_metafile_info(&args);
 
+        let info_hash_encoded: &str = serde_urlencoded::from_bytes(&info.hash).unwrap();
+
         let response = reqwest::blocking::Client::new()
             .get(info.trackter_url)
-            .query(&("info_hash", info.hash))
             .query(&[
+                ("info_hash", info_hash_encoded),
                 ("peer_id", "00112233445566778899"),
                 ("port", "6881"),
                 ("uploaded", "0"),
                 ("downloaded", "0"),
+                ("left", &info.length.to_string()),
+                ("compact", "1"),
             ])
-            .query(&("left", info.length))
-            .query(&("compact", "1"))
             .send()
             .unwrap();
 
