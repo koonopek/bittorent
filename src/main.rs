@@ -26,7 +26,19 @@ fn main() {
         let info = get_metafile_info(file_path);
         let peer = &args[3];
 
-        handshake(peer, info);
+        let connection = handshake(peer, info);
+        println!("Handshaked with Peer ID: {}", connection.peer_id);
+    } else if command == "download_piece" {
+        let (param_name, save_to, torrent_info_path, piece_number) =
+            (&args[2], &args[3], &args[4], &args[5]);
+
+        if save_to != "-o" {
+            panic!("Expected -o in download_piece command")
+        }
+
+        let info = get_metafile_info(torrent_info_path);
+        let peers = discover_peers(info);
+        let peer = peers.get(0).expect("Expected at least one peer");
     } else {
         println!("unknown command: {}", args[1])
     }

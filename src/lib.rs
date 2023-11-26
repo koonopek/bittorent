@@ -1,7 +1,7 @@
 use std::{
     fmt::Display,
     fs,
-    io::{BufReader, Read, Write},
+    io::{BufReader, BufWriter, Read, Write},
     net::TcpStream,
     path::{Path, PathBuf},
 };
@@ -150,12 +150,16 @@ pub fn get_metafile_info(file_path: &String) -> MetaInfoFile {
     };
 }
 
-pub fn handshake(peer: &String, info: MetaInfoFile) {
+pub struct PeerConnection {
+    pub tcp_stream: TcpStream,
+    pub peer_id: String,
+}
+
+pub fn handshake(peer: &String, info: MetaInfoFile) -> PeerConnection {
     println!("Connection to peer {}", peer);
     let mut stream = TcpStream::connect(peer).expect("Failed to connect to peer");
 
-    let mut payload = Vec::with_capacity(68);
-    //28 + 20 + 20
+    let mut payload = Vec::with_capacity(68); // 28 + 20 + 20
     payload.push(19);
     payload.extend_from_slice(b"BitTorrent protocol\x00\x00\x00\x00\x00\x00\x00\x00");
     payload.extend(info.hash);
@@ -165,17 +169,17 @@ pub fn handshake(peer: &String, info: MetaInfoFile) {
         .write_all(&payload)
         .expect("Failed to write to tcp stream");
 
-    let mut buf_reader = BufReader::new(stream);
-
     let mut return_message_buf: [u8; 68] = [0; 68];
-    buf_reader
+    stream
         .read_exact(&mut return_message_buf)
         .expect("Failed to read peer handshake response");
 
-    println!(
-        "Handshaked with Peer ID: {}",
-        hex::encode(&return_message_buf[48..68])
-    );
+    let peer_id = hex::encode(&return_message_buf[48..68]);
+
+    PeerConnection {
+        tcp_stream: stream,
+        peer_id,
+    }
 }
 
 pub fn discover_peers(info: MetaInfoFile) -> Vec<String> {
@@ -213,7 +217,6 @@ pub fn discover_peers(info: MetaInfoFile) -> Vec<String> {
         let first_byte_port = *iterator.next().unwrap() as u16;
         let second_byte_port = *iterator.next().unwrap() as u16;
         let port = (first_byte_port << 8) | second_byte_port;
-
         let peer_address = format!(
             "{}.{}.{}.{}:{}",
             first_octet, second_octet, third_octet, fourth_octet, port
