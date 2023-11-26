@@ -1,7 +1,12 @@
-use std::{env, io::Write, net::TcpStream};
+use std::{
+    env,
+    io::{BufReader, Read, Write},
+    net::TcpStream,
+};
 
 use bittorrent_starter_rust::{decode_bencoded_value, get_metafile_info};
 use serde_json::json;
+use sha1::digest::core_api::Buffer;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -27,7 +32,7 @@ fn main() {
         println!("Connection to peer {}", peer);
         let mut stream = TcpStream::connect(peer).expect("Failed to connect to peer");
 
-        let mut payload = Vec::with_capacity(29 + 20 + 20);
+        let mut payload = Vec::with_capacity(69); //29 + 20 + 20
         payload.push(19);
         payload.extend_from_slice(b"BitTorrent protocol\x00\x00\x00\x00\x00\x00\x00\x00");
         payload.extend(info.hash);
@@ -36,6 +41,13 @@ fn main() {
         stream
             .write_all(&payload)
             .expect("Failed to write to tcp stream");
+
+        let mut buf_reader = BufReader::new(stream);
+
+        let mut return_message: [u8; 69] = [0; 69];
+        buf_reader
+            .read_exact(&mut return_message)
+            .expect("Failed to read peer handshake response");
     } else {
         println!("unknown command: {}", args[1])
     }
