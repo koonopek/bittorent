@@ -48,9 +48,10 @@ fn main() {
             .read_exact(&mut return_message_buf)
             .expect("Failed to read peer handshake response");
 
-        let response_peer_id = String::from_utf8(return_message_buf[48..68].to_vec()).unwrap();
-
-        println!("Peer ID: {}", response_peer_id);
+        println!("Peer ID: ");
+        for byte in return_message_buf[48..68].iter() {
+            print!("{}", byte);
+        }
     } else {
         println!("unknown command: {}", args[1])
     }
