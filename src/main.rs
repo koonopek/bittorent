@@ -48,10 +48,10 @@ fn main() {
             .read_exact(&mut return_message_buf)
             .expect("Failed to read peer handshake response");
 
-        println!("Peer ID: ");
-        for byte in return_message_buf[48..68].iter() {
-            print!("{}", byte);
-        }
+        println!("Peer ID: {}", hex::encode(&return_message_buf[48..68]));
+        // for byte in .iter() {
+        //     print!("{}", byte);
+        // }
     } else {
         println!("unknown command: {}", args[1])
     }
