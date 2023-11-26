@@ -38,6 +38,8 @@ fn main() {
         payload.extend(info.hash);
         payload.extend_from_slice(b"00112233445566778899");
 
+        print!("payload len {}", payload.len());
+
         stream
             .write_all(&payload)
             .expect("Failed to write to tcp stream");
