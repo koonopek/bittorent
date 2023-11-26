@@ -40,6 +40,8 @@ fn main() {
         let peer = peers.get(0).expect("Expected at least one peer");
         let mut connection = handshake(peer, &info);
 
+        println!("sucessful handshake");
+
         let mut payload_size_buf: [u8; 4] = [0; 4];
         connection
             .tcp_stream
