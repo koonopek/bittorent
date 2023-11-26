@@ -35,12 +35,6 @@ fn main() {
         let (param_name, save_to, torrent_info_path, piece_number) =
             (&args[2], &args[3], &args[4], &args[5]);
 
-        print!("{} {}", param_name, save_to);
-
-        if save_to != "-o" {
-            panic!("Expected -o in download_piece command")
-        }
-
         let info = get_metafile_info(torrent_info_path);
         let peers = discover_peers(&info);
         let peer = peers.get(0).expect("Expected at least one peer");
