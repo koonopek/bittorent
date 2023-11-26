@@ -1,7 +1,7 @@
 use std::{
     fmt::Display,
     fs,
-    io::{BufReader, BufWriter, Read, Write},
+    io::{Read, Write},
     net::TcpStream,
     path::{Path, PathBuf},
 };
@@ -155,14 +155,14 @@ pub struct PeerConnection {
     pub peer_id: String,
 }
 
-pub fn handshake(peer: &String, info: MetaInfoFile) -> PeerConnection {
+pub fn handshake(peer: &str, info: &MetaInfoFile) -> PeerConnection {
     println!("Connection to peer {}", peer);
     let mut stream = TcpStream::connect(peer).expect("Failed to connect to peer");
 
     let mut payload = Vec::with_capacity(68); // 28 + 20 + 20
     payload.push(19);
     payload.extend_from_slice(b"BitTorrent protocol\x00\x00\x00\x00\x00\x00\x00\x00");
-    payload.extend(info.hash);
+    payload.extend_from_slice(&info.hash);
     payload.extend_from_slice(b"00112233445566778899");
 
     stream
@@ -182,10 +182,10 @@ pub fn handshake(peer: &String, info: MetaInfoFile) -> PeerConnection {
     }
 }
 
-pub fn discover_peers(info: MetaInfoFile) -> Vec<String> {
-    let info_hash_encoded: String = unsafe { String::from_utf8_unchecked(info.hash) };
+pub fn discover_peers(info: &MetaInfoFile) -> Vec<String> {
+    let info_hash_encoded: String = unsafe { String::from_utf8_unchecked(info.hash.to_vec()) };
     let response = reqwest::blocking::Client::new()
-        .get(info.trackter_url)
+        .get(&info.trackter_url)
         .query(&[
             ("info_hash", info_hash_encoded.as_str()),
             ("peer_id", "00112233445566778899"),
