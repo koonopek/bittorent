@@ -6,7 +6,6 @@ use std::{
 
 use bittorrent_starter_rust::{decode_bencoded_value, get_metafile_info};
 use serde_json::json;
-use sha1::digest::core_api::Buffer;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -44,10 +43,14 @@ fn main() {
 
         let mut buf_reader = BufReader::new(stream);
 
-        let mut return_message: [u8; 68] = [0; 68];
+        let mut return_message_buf: [u8; 68] = [0; 68];
         buf_reader
-            .read_exact(&mut return_message)
+            .read_exact(&mut return_message_buf)
             .expect("Failed to read peer handshake response");
+
+        let response_peer_id = String::from_utf8(return_message_buf[48..69].to_vec()).unwrap();
+
+        println!("Peer ID: {}", response_peer_id);
     } else {
         println!("unknown command: {}", args[1])
     }
