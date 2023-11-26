@@ -56,11 +56,15 @@ fn main() {
             5 => MessageType::BitField,
             id => panic!("Unknown message type {}", id),
         };
+
+        println!();
+        print!("message type {:?}", message_type);
     } else {
         println!("unknown command: {}", args[1])
     }
 }
 
+#[derive(Debug)]
 enum MessageType {
     BitField,
 }
