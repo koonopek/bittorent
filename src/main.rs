@@ -32,13 +32,11 @@ fn main() {
         println!("Connection to peer {}", peer);
         let mut stream = TcpStream::connect(peer).expect("Failed to connect to peer");
 
-        let mut payload = Vec::with_capacity(69); //29 + 20 + 20
+        let mut payload = Vec::with_capacity(68); //28 + 20 + 20
         payload.push(19);
         payload.extend_from_slice(b"BitTorrent protocol\x00\x00\x00\x00\x00\x00\x00\x00");
         payload.extend(info.hash);
         payload.extend_from_slice(b"00112233445566778899");
-
-        print!("payload len {}", payload.len());
 
         stream
             .write_all(&payload)
@@ -46,7 +44,7 @@ fn main() {
 
         let mut buf_reader = BufReader::new(stream);
 
-        let mut return_message: [u8; 69] = [0; 69];
+        let mut return_message: [u8; 68] = [0; 68];
         buf_reader
             .read_exact(&mut return_message)
             .expect("Failed to read peer handshake response");
