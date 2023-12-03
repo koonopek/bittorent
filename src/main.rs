@@ -1,6 +1,6 @@
 use std::{
     env,
-    io::{Read, Write},
+    io::{IoSlice, Read, Write},
 };
 
 use bittorrent_starter_rust::{
@@ -45,10 +45,7 @@ fn main() {
         read_message(&mut connection);
 
         // send instrested
-        connection
-            .tcp_stream
-            .write_all(&[0, 0, 0, 1, 2])
-            .expect("Failed to write to tcp stream");
+        send_message(&mut connection, MessageType::Intrested, vec![]);
 
         println!("Send intrested message");
 
@@ -56,6 +53,25 @@ fn main() {
     } else {
         println!("unknown command: {}", args[1])
     }
+}
+
+fn send_message(
+    connection: &mut bittorrent_starter_rust::PeerConnection,
+    message_type: MessageType,
+    payload: Vec<u8>,
+) {
+    let payload_len = payload.len() + 1;
+
+    let mut message_payload: Vec<u8> = Vec::with_capacity(4 + payload_len);
+
+    message_payload.extend_from_slice(&payload_len.to_be_bytes());
+    message_payload.push(message_type as u8);
+    message_payload.extend(payload);
+
+    connection
+        .tcp_stream
+        .write_all(&message_payload)
+        .expect("Failed to write to tcp stream");
 }
 
 fn read_message(connection: &mut bittorrent_starter_rust::PeerConnection) {
@@ -74,7 +90,7 @@ fn read_message(connection: &mut bittorrent_starter_rust::PeerConnection) {
         .expect("Failed to read message id");
 
     let message_type = match message_id_buf[0] {
-        1 => MessageType::Unchoke,
+        1 => MessageType::Unchoked,
         5 => MessageType::BitField,
         id => panic!("Unknown message type {}", id),
     };
@@ -102,7 +118,7 @@ fn read_message(connection: &mut bittorrent_starter_rust::PeerConnection) {
 
 #[derive(Debug)]
 enum MessageType {
-    Unchoke = 1,
+    Unchoked = 1,
     Intrested = 2,
     BitField = 5,
 }
