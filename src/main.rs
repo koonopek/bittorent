@@ -45,46 +45,30 @@ fn main() {
 
         read_message(&mut connection);
 
-        // send instrested
         send_message(&mut connection, MessageType::Intrested, vec![]);
         println!("Sent intrested message");
 
         read_message(&mut connection);
 
-        let full_pieces_count: u32 = info.piece_length as u32 / (16 * 1024);
-        println!("Full pieces to read {}", full_pieces_count);
-
         let piece_index: u32 = piece_number.parse().expect("Failed to parse piece index");
 
-        for piece_i in 0..full_pieces_count {
-            request_piece_part(&mut connection, piece_index, piece_i);
-        }
+        let mut chunks_read = 0;
+        loop {
+            match info.piece_length - (16 * 1024 * chunks_read) {
+                x if x >= 16 * 1024 => {
+                    request_piece_part(&mut connection, piece_index, chunks_read as u32, 16 * 1024)
+                }
+                x => request_piece_part(&mut connection, piece_index, chunks_read as u32, x),
+            }
 
-        let last_piece_begin: u32 = full_pieces_count * 16 * 1024;
-        let last_piece_length: u32 = info.piece_length as u32 - last_piece_begin;
-        let need_last_piece = last_piece_length > 0;
-
-        println!(
-            "Last pieces to read {} length={} pieces_length={}",
-            need_last_piece, last_piece_length, info.piece_length
-        );
-
-        if need_last_piece {
-            request_piece_part(&mut connection, piece_index, full_pieces_count);
+            chunks_read += 1;
         }
 
         let mut piece_content = File::create(save_to).expect("Failed to open file");
 
-        for _ in 0..full_pieces_count {
+        for _ in 0..chunks_read {
             let message = read_message(&mut connection);
 
-            if message.message_type == MessageType::Piece {
-                piece_content.write(&message.payload).unwrap();
-            }
-        }
-
-        if need_last_piece {
-            let message = read_message(&mut connection);
             if message.message_type == MessageType::Piece {
                 piece_content.write(&message.payload).unwrap();
             }
@@ -100,15 +84,15 @@ fn request_piece_part(
     connection: &mut bittorrent_starter_rust::PeerConnection,
     piece_index: u32,
     offset_block: u32,
+    bytes_to_read: u32,
 ) {
     println!("Requesting piece {} offset {}", piece_index, offset_block);
     let begin: u32 = offset_block * 16 * 1024;
-    let length: u32 = 16 * 1024;
 
     let mut payload = Vec::with_capacity(12);
     payload.extend_from_slice(&piece_index.to_be_bytes());
     payload.extend_from_slice(&begin.to_be_bytes());
-    payload.extend_from_slice(&length.to_be_bytes());
+    payload.extend_from_slice(&bytes_to_read.to_be_bytes());
 
     send_message(connection, MessageType::Request, payload);
 }
