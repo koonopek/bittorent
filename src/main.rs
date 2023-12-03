@@ -62,6 +62,7 @@ fn main() {
         let last_piece_begin: u32 = full_pieces_count * 16 * 1024;
         let last_piece_length: u32 = info.piece_length as u32 - last_piece_begin;
         let need_last_piece = last_piece_length > 0;
+
         println!(
             "Last pieces to read {} length={} pieces_length={}",
             need_last_piece, last_piece_length, info.piece_length
