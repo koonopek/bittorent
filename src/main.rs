@@ -33,7 +33,7 @@ fn main() {
         let connection = handshake(peer, &info);
         println!("Handshaked with Peer ID: {}", connection.peer_id);
     } else if command == "download_piece" {
-        let (param_name, save_to, torrent_info_path, piece_number) =
+        let (_, save_to, torrent_info_path, piece_number) =
             (&args[2], &args[3], &args[4], &args[5]);
 
         let info = get_metafile_info(torrent_info_path);
@@ -74,8 +74,6 @@ fn main() {
         }
 
         let mut piece_content = File::create(save_to).expect("Failed to open file");
-
-        let mut bytes_written = 0;
 
         for _ in 0..full_pieces_count {
             let message = read_message(&mut connection);
