@@ -47,7 +47,7 @@ fn main() {
         // send instrested
         connection
             .tcp_stream
-            .write_all(&[MessageType::Intrested as u8])
+            .write_all(&[2])
             .expect("Failed to write to tcp stream");
 
         println!("Send intrested message");
