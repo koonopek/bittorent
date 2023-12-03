@@ -137,4 +137,5 @@ enum MessageType {
     Intrested = 2,
     BitField = 5,
     Request = 6,
+    Piece = 7,
 }
