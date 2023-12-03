@@ -75,7 +75,9 @@ fn main() {
 
         send_message(&mut connection, MessageType::Request, payload);
 
-        read_message(&mut connection);
+        for _ in 0..full_pieces_count + 1 {
+            read_message(&mut connection);
+        }
     } else {
         println!("unknown command: {}", args[1])
     }
@@ -137,8 +139,6 @@ fn read_message(connection: &mut bittorrent_starter_rust::PeerConnection) {
         .tcp_stream
         .read_exact(&mut payload)
         .expect("Failed to read buffer");
-
-    println!(">>Payload: {:?}", payload);
 
     println!("Finished reading message");
 }
