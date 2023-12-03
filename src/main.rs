@@ -61,7 +61,7 @@ fn main() {
 
         let payload_size = u32::from_be_bytes(payload_size_buf) as usize;
 
-        let mut payload = vec![0; payload_size];
+        let mut payload = vec![0; payload_size - 1];
 
         connection
             .tcp_stream
