@@ -1,5 +1,6 @@
 use std::{
     env,
+    fs::File,
     io::{IoSlice, Read, Write},
 };
 
@@ -72,13 +73,19 @@ fn main() {
             request_piece_part(&mut connection, piece_index, full_pieces_count);
         }
 
+        let mut piece_content = File::open(save_to).expect("Failed to open file");
+
         for _ in 0..full_pieces_count {
-            read_message(&mut connection);
+            let message = read_message(&mut connection);
+            piece_content.write(&message.payload).unwrap();
         }
 
         if need_last_piece {
-            read_message(&mut connection);
+            let message = read_message(&mut connection);
+            piece_content.write(&message.payload).unwrap();
         }
+
+        println!("Piece {} downloaded to {}.", piece_index, save_to);
     } else {
         println!("unknown command: {}", args[1])
     }
@@ -120,7 +127,12 @@ fn send_message(
         .expect("Failed to write to tcp stream");
 }
 
-fn read_message(connection: &mut bittorrent_starter_rust::PeerConnection) {
+struct Message {
+    payload: Vec<u8>,
+    message_type: MessageType,
+}
+
+fn read_message(connection: &mut bittorrent_starter_rust::PeerConnection) -> Message {
     let mut payload_size_buf: [u8; 4] = [0; 4];
     connection
         .tcp_stream
@@ -159,6 +171,11 @@ fn read_message(connection: &mut bittorrent_starter_rust::PeerConnection) {
         .expect("Failed to read buffer");
 
     println!("Finished reading message");
+
+    Message {
+        payload,
+        message_type,
+    }
 }
 
 #[derive(Debug)]
