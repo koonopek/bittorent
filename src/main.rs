@@ -107,6 +107,7 @@ fn read_message(connection: &mut bittorrent_starter_rust::PeerConnection) {
     let message_type = match message_id_buf[0] {
         1 => MessageType::Unchoked,
         5 => MessageType::BitField,
+        7 => MessageType::Piece
         id => panic!("Unknown message type {}", id),
     };
 
