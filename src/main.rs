@@ -63,6 +63,8 @@ fn read_message(connection: &mut bittorrent_starter_rust::PeerConnection) {
         .read_exact(&mut payload_size_buf)
         .expect("failed to reade message size");
 
+    println!("Reading new message");
+
     let mut message_id_buf: [u8; 1] = [0; 1];
     connection
         .tcp_stream
@@ -75,10 +77,14 @@ fn read_message(connection: &mut bittorrent_starter_rust::PeerConnection) {
         id => panic!("Unknown message type {}", id),
     };
 
+    println!(">>Message type: {:?}", message_type);
+
     let payload_size = match u32::from_be_bytes(payload_size_buf) {
         x if x == 0 => 0 as usize,
         x => (x - 1) as usize,
     };
+
+    println!(">>Payload size: {:?}", payload_size);
 
     let mut payload = vec![0; payload_size];
 
@@ -87,10 +93,7 @@ fn read_message(connection: &mut bittorrent_starter_rust::PeerConnection) {
         .read_exact(&mut payload)
         .expect("Failed to read buffer");
 
-    print!(
-        "message type {:?} payload size {} payload {:?}",
-        message_type, payload_size, payload
-    );
+    println!(">>Payload: {:?}", payload);
 }
 
 #[derive(Debug)]
