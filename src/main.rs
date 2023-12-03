@@ -59,8 +59,12 @@ fn main() {
             id => panic!("Unknown message type {}", id),
         };
 
-        println!();
-        print!("message type {:?}", message_type);
+        let payload_size = u32::from_be_bytes(payload_size_buf);
+
+        print!(
+            "message type {:?} payload size {}",
+            message_type, payload_size
+        );
     } else {
         println!("unknown command: {}", args[1])
     }
