@@ -49,7 +49,8 @@ fn main() {
             .tcp_stream
             .write_all(&[MessageType::Intrested as u8])
             .expect("Failed to write to tcp stream");
-        print!("Send intrested message");
+
+        println!("Send intrested message");
 
         read_message(&mut connection);
     } else {
@@ -82,7 +83,7 @@ fn read_message(connection: &mut bittorrent_starter_rust::PeerConnection) {
 
     let payload_size = match u32::from_be_bytes(payload_size_buf) {
         x if x == 0 => 0 as usize,
-        x => (x - 1) as usize,
+        x => (x - 0) as usize,
     };
 
     println!(">>Payload size: {:?}", payload_size);
