@@ -40,16 +40,26 @@ fn main() {
         let peer = peers.get(0).expect("Expected at least one peer");
 
         let mut connection = handshake(peer, &info);
-
         println!("sucessful handshake");
+
         read_message(&mut connection);
 
         // send instrested
         send_message(&mut connection, MessageType::Intrested, vec![]);
-
-        println!("Send intrested message");
+        println!("Sent intrested message");
 
         read_message(&mut connection);
+
+        let piece_index: u32 = piece_number.parse().expect("Failed to parse piece index");
+        let begin: u32 = 0;
+        let length: u32 = 0;
+
+        let mut payload = Vec::with_capacity(12);
+        payload.extend_from_slice(&piece_index.to_be_bytes());
+        payload.extend_from_slice(&begin.to_be_bytes());
+        payload.extend_from_slice(&length.to_be_bytes());
+
+        send_message(&mut connection, MessageType::Request, payload);
     } else {
         println!("unknown command: {}", args[1])
     }
@@ -121,4 +131,5 @@ enum MessageType {
     Unchoked = 1,
     Intrested = 2,
     BitField = 5,
+    Request = 6,
 }
