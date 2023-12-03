@@ -83,7 +83,7 @@ fn read_message(connection: &mut bittorrent_starter_rust::PeerConnection) {
 
     let payload_size = match u32::from_be_bytes(payload_size_buf) {
         x if x == 0 => 0 as usize,
-        x => (x - 0) as usize,
+        x => (x - 1) as usize,
     };
 
     println!(">>Payload size: {:?}", payload_size);
