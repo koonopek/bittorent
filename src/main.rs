@@ -103,8 +103,11 @@ fn request_piece_part(
     offset_block: u32,
     bytes_to_read: u32,
 ) {
-    println!("Requesting piece {} offset {}", piece_index, offset_block);
     let begin: u32 = offset_block * 16 * 1024;
+    println!(
+        "Requesting piece {} begin {} length {}",
+        piece_index, begin, bytes_to_read
+    );
 
     let mut payload = Vec::with_capacity(12);
     payload.extend_from_slice(&piece_index.to_be_bytes());
