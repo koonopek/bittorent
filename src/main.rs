@@ -49,6 +49,7 @@ fn main() {
             .tcp_stream
             .write_all(&[MessageType::Intrested as u8])
             .expect("Failed to write to tcp stream");
+        print!("Send intrested message");
 
         read_message(&mut connection);
     } else {
