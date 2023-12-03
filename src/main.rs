@@ -69,7 +69,7 @@ fn main() {
             .expect("Failed to red buffer");
 
         print!(
-            "message type {:?} payload size {} payload {:?",
+            "message type {:?} payload size {} payload {:?}",
             message_type, payload_size, payload
         );
     } else {
