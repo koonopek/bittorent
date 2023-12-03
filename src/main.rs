@@ -53,42 +53,45 @@ fn main() {
         let full_pieces_count: u32 = info.piece_length as u32 / (16 * 1024);
         println!("Full pieces to read {}", full_pieces_count);
 
+        let piece_index: u32 = piece_number.parse().expect("Failed to parse piece index");
+
         for piece_i in 0..full_pieces_count {
-            let piece_index: u32 = piece_number.parse().expect("Failed to parse piece index");
-            let begin: u32 = piece_i * 16 * 1024;
-            let length: u32 = 16 * 1024;
-
-            let mut payload = Vec::with_capacity(12);
-            payload.extend_from_slice(&piece_index.to_be_bytes());
-            payload.extend_from_slice(&begin.to_be_bytes());
-            payload.extend_from_slice(&length.to_be_bytes());
-
-            send_message(&mut connection, MessageType::Request, payload);
+            request_piece_part(&mut connection, piece_index, piece_i);
         }
 
-        let piece_index: u32 = piece_number.parse().expect("Failed to parse piece index");
-        let begin: u32 = full_pieces_count * 16 * 1024;
-        let length: u32 = info.piece_length as u32 - begin;
-        println!("Last piece to read begin={} length={}", begin, length);
-
-        if length > 0 {
-            let mut payload = Vec::with_capacity(12);
-            payload.extend_from_slice(&piece_index.to_be_bytes());
-            payload.extend_from_slice(&begin.to_be_bytes());
-            payload.extend_from_slice(&length.to_be_bytes());
-
-            send_message(&mut connection, MessageType::Request, payload);
+        let last_piece_begin: u32 = full_pieces_count * 16 * 1024;
+        let last_piece_length: u32 = info.piece_length as u32 - last_piece_begin;
+        let need_last_piece = last_piece_length > 0;
+        if need_last_piece {
+            request_piece_part(&mut connection, piece_index, full_pieces_count);
         }
 
         for _ in 0..full_pieces_count {
             read_message(&mut connection);
-            if length > 0 {
-                read_message(&mut connection);
-            }
+        }
+
+        if need_last_piece {
+            read_message(&mut connection);
         }
     } else {
         println!("unknown command: {}", args[1])
     }
+}
+
+fn request_piece_part(
+    connection: &mut bittorrent_starter_rust::PeerConnection,
+    piece_index: u32,
+    offset_block: u32,
+) {
+    let begin: u32 = offset_block * 16 * 1024;
+    let length: u32 = 16 * 1024;
+
+    let mut payload = Vec::with_capacity(12);
+    payload.extend_from_slice(&piece_index.to_be_bytes());
+    payload.extend_from_slice(&begin.to_be_bytes());
+    payload.extend_from_slice(&length.to_be_bytes());
+
+    send_message(connection, MessageType::Request, payload);
 }
 
 fn send_message(
