@@ -42,39 +42,46 @@ fn main() {
 
         println!("sucessful handshake");
 
-        let mut payload_size_buf: [u8; 4] = [0; 4];
-        connection
-            .tcp_stream
-            .read_exact(&mut payload_size_buf)
-            .expect("failed to reade message size");
-
-        let mut message_id_buf: [u8; 1] = [0; 1];
-        connection
-            .tcp_stream
-            .read_exact(&mut message_id_buf)
-            .expect("Failed to read message id");
-
-        let message_type = match message_id_buf[0] {
-            5 => MessageType::BitField,
-            id => panic!("Unknown message type {}", id),
-        };
-
-        let payload_size = u32::from_be_bytes(payload_size_buf) as usize;
-
-        let mut payload = vec![0; payload_size - 1];
-
-        connection
-            .tcp_stream
-            .read_exact(&mut payload)
-            .expect("Failed to red buffer");
-
-        print!(
-            "message type {:?} payload size {} payload {:?}",
-            message_type, payload_size, payload
-        );
+        read_message(connection);
     } else {
         println!("unknown command: {}", args[1])
     }
+}
+
+fn read_message(mut connection: bittorrent_starter_rust::PeerConnection) {
+    let mut payload_size_buf: [u8; 4] = [0; 4];
+    connection
+        .tcp_stream
+        .read_exact(&mut payload_size_buf)
+        .expect("failed to reade message size");
+
+    let mut message_id_buf: [u8; 1] = [0; 1];
+    connection
+        .tcp_stream
+        .read_exact(&mut message_id_buf)
+        .expect("Failed to read message id");
+
+    let message_type = match message_id_buf[0] {
+        5 => MessageType::BitField,
+        id => panic!("Unknown message type {}", id),
+    };
+
+    let payload_size = match u32::from_be_bytes(payload_size_buf) {
+        x if x == 0 => 0 as usize,
+        x => (x - 1) as usize,
+    };
+
+    let mut payload = vec![0; payload_size];
+
+    connection
+        .tcp_stream
+        .read_exact(&mut payload)
+        .expect("Failed to red buffer");
+
+    print!(
+        "message type {:?} payload size {} payload {:?}",
+        message_type, payload_size, payload
+    );
 }
 
 #[derive(Debug)]
