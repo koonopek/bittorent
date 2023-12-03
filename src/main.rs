@@ -73,7 +73,7 @@ fn main() {
             request_piece_part(&mut connection, piece_index, full_pieces_count);
         }
 
-        let mut piece_content = File::open(save_to).expect("Failed to open file");
+        let mut piece_content = File::create(save_to).expect("Failed to open file");
 
         for _ in 0..full_pieces_count {
             let message = read_message(&mut connection);
