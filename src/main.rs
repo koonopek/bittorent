@@ -47,7 +47,7 @@ fn main() {
         // send instrested
         connection
             .tcp_stream
-            .write_all(&[2])
+            .write_all(&[0, 0, 0, 1, 2])
             .expect("Failed to write to tcp stream");
 
         println!("Send intrested message");
