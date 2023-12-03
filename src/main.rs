@@ -95,6 +95,8 @@ fn read_message(connection: &mut bittorrent_starter_rust::PeerConnection) {
         .expect("Failed to read buffer");
 
     println!(">>Payload: {:?}", payload);
+
+    println!("Finished reading message");
 }
 
 #[derive(Debug)]
