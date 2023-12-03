@@ -80,17 +80,19 @@ fn main() {
         for _ in 0..full_pieces_count {
             let message = read_message(&mut connection);
 
-            bytes_written += piece_content.write(&message.payload).unwrap();
+            if message.message_type == MessageType::Piece {
+                piece_content.write(&message.payload).unwrap();
+            }
         }
 
         if need_last_piece {
             let message = read_message(&mut connection);
-            bytes_written += piece_content.write(&message.payload).unwrap();
+            if message.message_type == MessageType::Piece {
+                piece_content.write(&message.payload).unwrap();
+            }
         }
 
         println!("Piece {} downloaded to {}.", piece_index, save_to);
-
-        println!("Piece bytes ={}", bytes_written);
     } else {
         println!("unknown command: {}", args[1])
     }
@@ -183,7 +185,7 @@ fn read_message(connection: &mut bittorrent_starter_rust::PeerConnection) -> Mes
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 enum MessageType {
     Unchoked = 1,
     Intrested = 2,
