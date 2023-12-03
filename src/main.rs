@@ -62,6 +62,11 @@ fn main() {
         let last_piece_begin: u32 = full_pieces_count * 16 * 1024;
         let last_piece_length: u32 = info.piece_length as u32 - last_piece_begin;
         let need_last_piece = last_piece_length > 0;
+        println!(
+            "Last pieces to read {} length={}",
+            need_last_piece, last_piece_length
+        );
+
         if need_last_piece {
             request_piece_part(&mut connection, piece_index, full_pieces_count);
         }
@@ -83,6 +88,7 @@ fn request_piece_part(
     piece_index: u32,
     offset_block: u32,
 ) {
+    println!("Requesting piece {} offset {}", piece_index, offset_block);
     let begin: u32 = offset_block * 16 * 1024;
     let length: u32 = 16 * 1024;
 
