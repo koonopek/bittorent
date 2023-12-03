@@ -38,17 +38,25 @@ fn main() {
         let info = get_metafile_info(torrent_info_path);
         let peers = discover_peers(&info);
         let peer = peers.get(0).expect("Expected at least one peer");
+
         let mut connection = handshake(peer, &info);
 
         println!("sucessful handshake");
+        read_message(&mut connection);
 
-        read_message(connection);
+        // send instrested
+        connection
+            .tcp_stream
+            .write_all(&[MessageType::Intrested as u8])
+            .expect("Failed to write to tcp stream");
+
+        read_message(&mut connection);
     } else {
         println!("unknown command: {}", args[1])
     }
 }
 
-fn read_message(mut connection: bittorrent_starter_rust::PeerConnection) {
+fn read_message(connection: &mut bittorrent_starter_rust::PeerConnection) {
     let mut payload_size_buf: [u8; 4] = [0; 4];
     connection
         .tcp_stream
@@ -62,6 +70,7 @@ fn read_message(mut connection: bittorrent_starter_rust::PeerConnection) {
         .expect("Failed to read message id");
 
     let message_type = match message_id_buf[0] {
+        1 => MessageType::Unchoke,
         5 => MessageType::BitField,
         id => panic!("Unknown message type {}", id),
     };
@@ -76,7 +85,7 @@ fn read_message(mut connection: bittorrent_starter_rust::PeerConnection) {
     connection
         .tcp_stream
         .read_exact(&mut payload)
-        .expect("Failed to red buffer");
+        .expect("Failed to read buffer");
 
     print!(
         "message type {:?} payload size {} payload {:?}",
@@ -86,5 +95,7 @@ fn read_message(mut connection: bittorrent_starter_rust::PeerConnection) {
 
 #[derive(Debug)]
 enum MessageType {
-    BitField,
+    Unchoke = 1,
+    Intrested = 2,
+    BitField = 5,
 }
