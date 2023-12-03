@@ -81,7 +81,7 @@ fn main() {
 
             if message.message_type == MessageType::Piece {
                 bytes_read += message.payload.len();
-                // 3
+                //3
                 println!(
                     "Writing message payload length={} bytes_read={}",
                     message.payload.len(),
