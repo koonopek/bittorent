@@ -74,11 +74,19 @@ fn main() {
 
         let mut piece_content = File::create(save_to).expect("Failed to open file");
 
+        let mut bytes_read = 0;
+
         for _ in 0..chunks_read {
             let message = read_message(&mut connection);
 
             if message.message_type == MessageType::Piece {
-                println!("Writing message payload length={}", message.payload.len());
+                bytes_read += message.payload.len();
+
+                println!(
+                    "Writing message payload length={} bytes_read={}",
+                    message.payload.len(),
+                    bytes_read
+                );
                 piece_content.write(&message.payload).unwrap();
             }
         }
