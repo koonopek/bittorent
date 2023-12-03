@@ -56,6 +56,7 @@ fn main() {
         loop {
             match info.piece_length - (16 * 1024 * chunks_read) {
                 0 => break,
+
                 x if x >= 16 * 1024 => {
                     request_piece_part(&mut connection, piece_index, chunks_read as u32, 16 * 1024)
                 }
