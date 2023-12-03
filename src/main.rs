@@ -64,6 +64,17 @@ fn main() {
 
             send_message(&mut connection, MessageType::Request, payload);
         }
+        let piece_index: u32 = piece_number.parse().expect("Failed to parse piece index");
+        let begin: u32 = full_pieces_count * 16 * 1024;
+        let length: u32 = info.piece_length as u32 - begin;
+
+        let mut payload = Vec::with_capacity(12);
+        payload.extend_from_slice(&piece_index.to_be_bytes());
+        payload.extend_from_slice(&begin.to_be_bytes());
+        payload.extend_from_slice(&length.to_be_bytes());
+
+        send_message(&mut connection, MessageType::Request, payload);
+
         read_message(&mut connection);
     } else {
         println!("unknown command: {}", args[1])
