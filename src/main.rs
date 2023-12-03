@@ -52,10 +52,6 @@ fn main() {
 
         let full_pieces_count: u32 = info.piece_length as u32 / (16 * 1024);
         println!("Full pieces to read {}", full_pieces_count);
-        let piece_index: u32 = piece_number.parse().expect("Failed to parse piece index");
-        let begin: u32 = full_pieces_count * 16 * 1024;
-        let length: u32 = info.piece_length as u32 - begin;
-        println!("Last piece to read begin={} lenght={}", begin, length);
 
         for piece_i in 0..full_pieces_count {
             let piece_index: u32 = piece_number.parse().expect("Failed to parse piece index");
@@ -70,12 +66,19 @@ fn main() {
             send_message(&mut connection, MessageType::Request, payload);
         }
 
-        let mut payload = Vec::with_capacity(12);
-        payload.extend_from_slice(&piece_index.to_be_bytes());
-        payload.extend_from_slice(&begin.to_be_bytes());
-        payload.extend_from_slice(&length.to_be_bytes());
+        let piece_index: u32 = piece_number.parse().expect("Failed to parse piece index");
+        let begin: u32 = full_pieces_count * 16 * 1024;
+        let length: u32 = info.piece_length as u32 - begin;
+        println!("Last piece to read begin={} lenght={}", begin, length);
 
-        send_message(&mut connection, MessageType::Request, payload);
+        if length > 0 {
+            let mut payload = Vec::with_capacity(12);
+            payload.extend_from_slice(&piece_index.to_be_bytes());
+            payload.extend_from_slice(&begin.to_be_bytes());
+            payload.extend_from_slice(&length.to_be_bytes());
+
+            send_message(&mut connection, MessageType::Request, payload);
+        }
 
         for _ in 0..full_pieces_count + 1 {
             read_message(&mut connection);
