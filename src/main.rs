@@ -59,11 +59,18 @@ fn main() {
             id => panic!("Unknown message type {}", id),
         };
 
-        let payload_size = u32::from_be_bytes(payload_size_buf);
+        let payload_size = u32::from_be_bytes(payload_size_buf) as usize;
+
+        let mut payload = Vec::with_capacity(payload_size);
+
+        connection
+            .tcp_stream
+            .read_exact(&mut payload)
+            .expect("Failed to red buffer");
 
         print!(
-            "message type {:?} payload size {}",
-            message_type, payload_size
+            "message type {:?} payload size {} payload {:?",
+            message_type, payload_size, payload
         );
     } else {
         println!("unknown command: {}", args[1])
