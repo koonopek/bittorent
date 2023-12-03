@@ -78,6 +78,7 @@ fn main() {
             let message = read_message(&mut connection);
 
             if message.message_type == MessageType::Piece {
+                println!("Writing message payload length={}",message.payload.len())
                 piece_content.write(&message.payload).unwrap();
             }
         }
