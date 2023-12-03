@@ -75,17 +75,21 @@ fn main() {
 
         let mut piece_content = File::create(save_to).expect("Failed to open file");
 
+        let mut bytes_written = 0;
+
         for _ in 0..full_pieces_count {
             let message = read_message(&mut connection);
-            piece_content.write(&message.payload).unwrap();
+
+            bytes_written += piece_content.write(&message.payload).unwrap();
         }
 
         if need_last_piece {
             let message = read_message(&mut connection);
-            piece_content.write(&message.payload).unwrap();
+            bytes_written += piece_content.write(&message.payload).unwrap();
         }
 
         println!("Piece {} downloaded to {}.", piece_index, save_to);
+        println!("Piece bytes ={}", bytes_written);
     } else {
         println!("unknown command: {}", args[1])
     }
