@@ -63,8 +63,8 @@ fn main() {
         let last_piece_length: u32 = info.piece_length as u32 - last_piece_begin;
         let need_last_piece = last_piece_length > 0;
         println!(
-            "Last pieces to read {} length={}",
-            need_last_piece, last_piece_length
+            "Last pieces to read {} length={} pieces_length={}",
+            need_last_piece, last_piece_length, info.piece_length
         );
 
         if need_last_piece {
