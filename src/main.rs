@@ -89,6 +89,7 @@ fn main() {
         }
 
         println!("Piece {} downloaded to {}.", piece_index, save_to);
+
         println!("Piece bytes ={}", bytes_written);
     } else {
         println!("unknown command: {}", args[1])
