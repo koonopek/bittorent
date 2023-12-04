@@ -57,6 +57,8 @@ fn main() {
         read_message(&mut connection);
 
         let mut chunks_read = 0;
+        let mut piece_content = File::create(save_to).expect("Failed to open file");
+
         loop {
             match info.piece_length - (16 * 1024 * chunks_read) {
                 0 => {
@@ -72,18 +74,21 @@ fn main() {
                     request_piece_part(&mut connection, piece_index, chunks_read as u32, x as u32)
                 }
             }
-            chunks_read += 1;
-        }
-
-        let mut piece_content = File::create(save_to).expect("Failed to open file");
-
-        for _ in 0..chunks_read {
             let message = read_message(&mut connection);
 
             if message.message_type == MessageType::Piece {
                 piece_content.write(&message.payload[8..]).unwrap();
             }
+            chunks_read += 1;
         }
+
+        // for _ in 0..chunks_read {
+        //     let message = read_message(&mut connection);
+
+        //     if message.message_type == MessageType::Piece {
+        //         piece_content.write(&message.payload[8..]).unwrap();
+        //     }
+        // }
 
         println!("Piece {} downloaded to {}.", piece_index, save_to);
 
