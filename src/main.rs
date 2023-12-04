@@ -75,15 +75,15 @@ fn main() {
             chunks_read += 1;
         }
 
-        let mut piece_content = File::create(save_to).expect("Failed to open file");
+        // let mut piece_content = File::create(save_to).expect("Failed to open file");
 
         for _ in 0..chunks_read {
             let message = read_message(&mut connection);
-
-            if message.message_type == MessageType::Piece {
-                piece_content.write(&message.payload[8..]).unwrap();
-            }
         }
+
+        // if message.message_type == MessageType::Piece {
+        //     piece_content.write(&message.payload[8..]).unwrap();
+        // }
 
         println!("Piece {} downloaded to {}.", piece_index, save_to);
     } else {
