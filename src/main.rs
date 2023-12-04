@@ -37,6 +37,7 @@ fn main() {
             (&args[2], &args[3], &args[4], &args[5]);
 
         let info = get_metafile_info(torrent_info_path);
+        println!("pieces length {}", info.piece_length);
         let peers = discover_peers(&info);
         let peer = peers.get(0).expect("Expected at least one peer");
 
