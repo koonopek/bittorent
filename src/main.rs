@@ -40,7 +40,7 @@ fn main() {
         println!("pieces length {}", info.piece_length);
         let peers = discover_peers(&info);
         println!("Peers {:?}", peers);
-        let peer = peers.get(0).expect("Expected at least one peer");
+        let peer = peers.get(1).expect("Expected at least one peer");
         println!("Selected peer {}", peer);
 
         let mut connection = handshake(peer, &info);
