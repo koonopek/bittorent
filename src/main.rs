@@ -35,12 +35,15 @@ fn main() {
     } else if command == "download_piece" {
         let (_, save_to, torrent_info_path, piece_number) =
             (&args[2], &args[3], &args[4], &args[5]);
+        let piece_index: u32 = piece_number.parse().expect("Failed to parse piece index");
 
         let info = get_metafile_info(torrent_info_path);
         println!("pieces length {}", info.piece_length);
         let peers = discover_peers(&info);
         println!("Peers {:?}", peers);
-        let peer = peers.get(2).expect("Expected at least one peer");
+        let peer = peers
+            .get((piece_index % 3) as usize)
+            .expect("Expected at least one peer");
         println!("Selected peer {}", peer);
 
         let mut connection = handshake(peer, &info);
@@ -52,8 +55,6 @@ fn main() {
         println!("Sent intrested message");
 
         read_message(&mut connection);
-
-        let piece_index: u32 = piece_number.parse().expect("Failed to parse piece index");
 
         let mut chunks_read = 0;
         loop {
