@@ -73,6 +73,7 @@ fn main() {
             .read_to_end(&mut current_content)
             .expect("Failed to read exiting");
 
+        //xd
         let length_to_read = (info.piece_length as i64) - current_content.len() as i64;
 
         println!(
