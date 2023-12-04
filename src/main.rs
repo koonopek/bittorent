@@ -69,6 +69,8 @@ fn main() {
                 .expect("Failed to read metadata")
                 .len() as i64;
 
+        println!("Length to read {}", length_to_read);
+
         loop {
             match length_to_read - (16 * 1024 * chunks_read) {
                 0 => {
@@ -94,7 +96,6 @@ fn main() {
                 piece_content.write(&message.payload[8..]).unwrap();
             }
         }
-        // piece_length = pieces length - current file size
 
         println!("Piece {} downloaded to {}.", piece_index, save_to);
 
