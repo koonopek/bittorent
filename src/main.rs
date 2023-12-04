@@ -176,7 +176,7 @@ fn read_message(connection: &mut bittorrent_starter_rust::PeerConnection) -> Mes
     };
 
     println!(">>Payload size: {:?}", payload_size);
-    //x2
+    //x3
 
     let mut payload = vec![0; payload_size];
 
