@@ -1,7 +1,7 @@
 use std::{
     env,
     fs::File,
-    io::{IoSlice, Read, Write},
+    io::{Read, Write},
 };
 
 use bittorrent_starter_rust::{
