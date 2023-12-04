@@ -1,7 +1,7 @@
 use std::{
     env,
-    fs::File,
-    io::{Read, Write},
+    fs::{File, OpenOptions},
+    io::{self, Read, Write},
 };
 
 use bittorrent_starter_rust::{
@@ -57,10 +57,20 @@ fn main() {
         read_message(&mut connection);
 
         let mut chunks_read = 0;
-        let mut piece_content = File::create(save_to).expect("Failed to open file");
+
+        let mut piece_content = match OpenOptions::new().write(true).read(true).open(save_to) {
+            Ok(file) => file,
+            Err(_) => File::create(save_to).expect("Failed to open file"),
+        };
+
+        let length_to_read = (info.piece_length as i64)
+            - piece_content
+                .metadata()
+                .expect("Failed to read metadata")
+                .len() as i64;
 
         loop {
-            match info.piece_length - (16 * 1024 * chunks_read) {
+            match length_to_read - (16 * 1024 * chunks_read) {
                 0 => {
                     println!("End of read {}", chunks_read);
                     break;
@@ -74,21 +84,17 @@ fn main() {
                     request_piece_part(&mut connection, piece_index, chunks_read as u32, x as u32)
                 }
             }
+            chunks_read += 1;
+        }
+
+        for _ in 0..chunks_read {
             let message = read_message(&mut connection);
 
             if message.message_type == MessageType::Piece {
                 piece_content.write(&message.payload[8..]).unwrap();
             }
-            chunks_read += 1;
         }
-
-        // for _ in 0..chunks_read {
-        //     let message = read_message(&mut connection);
-
-        //     if message.message_type == MessageType::Piece {
-        //         piece_content.write(&message.payload[8..]).unwrap();
-        //     }
-        // }
+        // piece_length = pieces length - current file size
 
         println!("Piece {} downloaded to {}.", piece_index, save_to);
 
@@ -176,7 +182,6 @@ fn read_message(connection: &mut bittorrent_starter_rust::PeerConnection) -> Mes
     };
 
     println!(">>Payload size: {:?}", payload_size);
-    //x3
 
     let mut payload = vec![0; payload_size];
 
