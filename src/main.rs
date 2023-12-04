@@ -71,7 +71,6 @@ fn main() {
                     request_piece_part(&mut connection, piece_index, chunks_read as u32, x as u32)
                 }
             }
-
             chunks_read += 1;
         }
 
