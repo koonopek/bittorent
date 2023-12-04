@@ -60,7 +60,12 @@ fn main() {
 
         let mut piece_content = match OpenOptions::new().write(true).read(true).open(save_to) {
             Ok(file) => file,
-            Err(_) => File::create(save_to).expect("Failed to open file"),
+            Err(_) => OpenOptions::new()
+                .write(true)
+                .read(true)
+                .create(true)
+                .open(save_to)
+                .expect("Failed to open file"),
         };
 
         let mut current_content = Vec::new();
