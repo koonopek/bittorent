@@ -69,7 +69,7 @@ fn main() {
                 .expect("Failed to read metadata")
                 .len() as i64;
 
-        println!("Length to read {}", length_to_read);
+        println!("Length to read is {}", length_to_read);
 
         loop {
             match length_to_read - (16 * 1024 * chunks_read) {
