@@ -63,11 +63,18 @@ fn main() {
             Err(_) => File::create(save_to).expect("Failed to open file"),
         };
 
-        let length_to_read = (info.piece_length as i64)
-            - piece_content
-                .seek(io::SeekFrom::Start(0))
-                .expect("failed to seek") as i64;
-        println!("Length to read is {}", length_to_read);
+        let mut current_content = Vec::new();
+        piece_content
+            .read_to_end(&mut current_content)
+            .expect("Failed to read exiting");
+
+        let length_to_read = (info.piece_length as i64) - current_content.len() as i64;
+
+        println!(
+            "Current piece length is {} Length to read is {}",
+            current_content.len(),
+            length_to_read
+        );
 
         loop {
             match length_to_read - (16 * 1024 * chunks_read) {
