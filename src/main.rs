@@ -39,7 +39,9 @@ fn main() {
         let info = get_metafile_info(torrent_info_path);
         println!("pieces length {}", info.piece_length);
         let peers = discover_peers(&info);
+        println!("Peers {:?}", peers);
         let peer = peers.get(0).expect("Expected at least one peer");
+        println!("Selected peer {}", peer);
 
         let mut connection = handshake(peer, &info);
         println!("sucessful handshake");
@@ -80,7 +82,6 @@ fn main() {
 
             if message.message_type == MessageType::Piece {
                 piece_content.write(&message.payload[8..]).unwrap();
-                //2
             }
         }
 
