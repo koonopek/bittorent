@@ -78,7 +78,7 @@ fn main() {
             let message = read_message(&mut connection);
 
             if message.message_type == MessageType::Piece {
-                piece_content.write(&message.payload[12..]).unwrap();
+                piece_content.write(&message.payload[8..]).unwrap();
             }
         }
 
