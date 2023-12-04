@@ -115,6 +115,8 @@ fn main() {
             .tcp_stream
             .shutdown(std::net::Shutdown::Both)
             .expect("Failed to close tcp stream");
+
+        piece_content.flush().expect("Failed to flush file");
     } else {
         println!("unknown command: {}", args[1])
     }
