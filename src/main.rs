@@ -1,7 +1,7 @@
 use std::{
     env,
     fs::{File, OpenOptions},
-    io::{self, Read, Write},
+    io::{self, Read, Seek, Write},
 };
 
 use bittorrent_starter_rust::{
@@ -65,10 +65,8 @@ fn main() {
 
         let length_to_read = (info.piece_length as i64)
             - piece_content
-                .metadata()
-                .expect("Failed to read metadata")
-                .len() as i64;
-
+                .seek(io::SeekFrom::Start(0))
+                .expect("failed to seek") as i64;
         println!("Length to read is {}", length_to_read);
 
         loop {
