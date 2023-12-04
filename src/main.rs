@@ -86,6 +86,12 @@ fn main() {
         }
 
         println!("Piece {} downloaded to {}.", piece_index, save_to);
+
+        println!("Closing tcp stream");
+        connection
+            .tcp_stream
+            .shutdown(std::net::Shutdown::Both)
+            .expect("Failed to close tcp stream");
     } else {
         println!("unknown command: {}", args[1])
     }
