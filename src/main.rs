@@ -72,11 +72,11 @@ fn main() {
             info.piece_length
         );
 
-        length_to_read = info.piece_length;
-
         loop {
-            match length_to_read - (16 * 1024 * chunks_read) {
-                0 => {
+            let current_chunk_to_read: i64 =
+                length_to_read as i64 - (16 * 1024 * chunks_read) as i64;
+            match current_chunk_to_read {
+                x if x < 0 => {
                     println!("End of read {}", chunks_read);
                     break;
                 }
