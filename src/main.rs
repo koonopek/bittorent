@@ -58,7 +58,7 @@ fn main() {
 
         let mut chunks_read = 0;
 
-        let piece_content = File::create(save_to).expect("Failed to open file");
+        let mut piece_content = File::create(save_to).expect("Failed to open file");
 
         let length_to_read = cmp::max(
             info.length - (piece_index + 1) * info.piece_length,
@@ -109,7 +109,7 @@ fn main() {
 
 fn request_piece_part(
     connection: &mut bittorrent_starter_rust::PeerConnection,
-    piece_index: u32,
+    piece_index: usize,
     offset_block: u32,
     bytes_to_read: u32,
 ) {
