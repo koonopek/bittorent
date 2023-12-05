@@ -65,7 +65,12 @@ fn main() {
             info.piece_length,
         );
 
-        println!("Length to read is {}", length_to_read);
+        println!(
+            "Length to read is {} left={} piece={}",
+            length_to_read,
+            info.length - (piece_index * info.piece_length),
+            info.piece_length
+        );
 
         loop {
             match length_to_read - (16 * 1024 * chunks_read) {
