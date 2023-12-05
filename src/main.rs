@@ -59,7 +59,10 @@ fn main() {
         let mut chunks_read = 0;
 
         let mut piece_content = match OpenOptions::new().write(true).read(true).open(save_to) {
-            Ok(file) => file,
+            Ok(file) => {
+                println!("Filed already exists!");
+                file
+            }
             Err(_) => OpenOptions::new()
                 .write(true)
                 .read(true)
