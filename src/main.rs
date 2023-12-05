@@ -75,11 +75,21 @@ fn main() {
                 }
                 x if x >= 16 * 1024 => {
                     println!("Full read {}", chunks_read);
-                    request_piece_part(&mut connection, piece_index, chunks_read as u32, 16 * 1024)
+                    request_piece_part(
+                        &mut connection,
+                        piece_index as u32,
+                        chunks_read as u32,
+                        16 * 1024,
+                    )
                 }
                 x => {
                     println!("Part read {}", chunks_read);
-                    request_piece_part(&mut connection, piece_index, chunks_read as u32, x as u32)
+                    request_piece_part(
+                        &mut connection,
+                        piece_index as u32,
+                        chunks_read as u32,
+                        x as u32,
+                    )
                 }
             }
             chunks_read += 1;
@@ -109,7 +119,7 @@ fn main() {
 
 fn request_piece_part(
     connection: &mut bittorrent_starter_rust::PeerConnection,
-    piece_index: usize,
+    piece_index: u32,
     offset_block: u32,
     bytes_to_read: u32,
 ) {
