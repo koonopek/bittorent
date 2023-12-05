@@ -1,5 +1,5 @@
 use std::{
-    env,
+    cmp, env,
     fs::{File, OpenOptions},
     io::{self, Read, Seek, Write},
 };
@@ -35,7 +35,7 @@ fn main() {
     } else if command == "download_piece" {
         let (_, save_to, torrent_info_path, piece_number) =
             (&args[2], &args[3], &args[4], &args[5]);
-        let piece_index: u32 = piece_number.parse().expect("Failed to parse piece index");
+        let piece_index: usize = piece_number.parse().expect("Failed to parse piece index");
 
         let info = get_metafile_info(torrent_info_path);
         println!("pieces length {}", info.piece_length);
@@ -58,32 +58,14 @@ fn main() {
 
         let mut chunks_read = 0;
 
-        let mut piece_content = match OpenOptions::new().write(true).read(true).open(save_to) {
-            Ok(file) => {
-                println!("Filed already exists!");
-                file
-            }
-            Err(_) => OpenOptions::new()
-                .write(true)
-                .read(true)
-                .create(true)
-                .open(save_to)
-                .expect("Failed to open file"),
-        };
+        let piece_content = File::create(save_to).expect("Failed to open file");
 
-        let mut current_content = Vec::new();
-        piece_content
-            .read_to_end(&mut current_content)
-            .expect("Failed to read exiting");
-
-        //xd
-        let length_to_read = (info.piece_length as i64) - current_content.len() as i64;
-
-        println!(
-            "Current piece length is {} Length to read is {}",
-            current_content.len(),
-            length_to_read
+        let length_to_read = cmp::max(
+            info.length - (piece_index + 1) * info.piece_length,
+            info.piece_length,
         );
+
+        println!("Length to read is {}", length_to_read);
 
         loop {
             match length_to_read - (16 * 1024 * chunks_read) {
