@@ -60,14 +60,10 @@ fn main() {
 
         let mut piece_content = File::create(save_to).expect("Failed to open file");
 
-        let length_to_read = cmp::min(
+        let mut length_to_read = cmp::min(
             info.length - (piece_index * info.piece_length),
             info.piece_length,
         );
-
-        if length_to_read > info.piece_length {
-            panic!("wrong length_to_read {}", length_to_read);
-        }
 
         println!(
             "Length to read is {} left={} piece={}",
@@ -75,6 +71,8 @@ fn main() {
             info.length - (piece_index * info.piece_length),
             info.piece_length
         );
+
+        length_to_read = info.piece_length;
 
         loop {
             match length_to_read - (16 * 1024 * chunks_read) {
