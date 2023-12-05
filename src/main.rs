@@ -61,7 +61,7 @@ fn main() {
         let mut piece_content = File::create(save_to).expect("Failed to open file");
 
         let length_to_read = cmp::min(
-            info.length - (piece_index + 1) * info.piece_length,
+            info.length - (piece_index * info.piece_length),
             info.piece_length,
         );
 
