@@ -65,6 +65,10 @@ fn main() {
             info.piece_length,
         );
 
+        if length_to_read > info.piece_length {
+            panic!("wrong length_to_read {}", length_to_read);
+        }
+
         println!(
             "Length to read is {} left={} piece={}",
             length_to_read,
