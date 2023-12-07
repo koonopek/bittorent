@@ -1,7 +1,11 @@
-use std::{env, fs::File, io::Write};
+use std::{
+    env,
+    fs::File,
+    io::{IoSlice, Write},
+};
 
 use bittorrent_starter_rust::{
-    decode_bencoded_value, discover_peers, download_piece, get_metafile_info, handshake,
+    decode_bencoded_value, discover_peers, download_piece, get_metafile_info, handshake, sha1_it,
 };
 use serde_json::json;
 
@@ -38,16 +42,45 @@ fn main() {
         let peer = peers
             .get((piece_index % 3) as usize)
             .expect("Expected at least one peer");
-        println!("Selected peer {}", peer);
 
         let piece = download_piece(peer, &info, piece_index);
 
-        let mut piece_content = File::create(save_to).expect("Failed to open file");
+        let mut file = File::create(save_to).expect("Failed to open file");
+        file.write(&piece).unwrap();
+        file.flush().expect("Failed to flush file");
         println!("Piece {} downloaded to {}.", piece_index, save_to);
-        piece_content.write(&piece).unwrap();
-        piece_content.flush().expect("Failed to flush file");
     } else if command == "download" {
         let (save_to, torrent_info_path) = (&args[3], &args[4]);
+
+        let info = get_metafile_info(torrent_info_path);
+        let peers = discover_peers(&info);
+        println!("Peers {:?}", peers);
+        let peer = peers.get(0).expect("Expected at least one peer");
+
+        let pieces_count = match (
+            info.length / info.piece_length,
+            info.length % info.piece_length,
+        ) {
+            (count, reminder) if reminder > 0 => count + 1,
+            (count, _) => count,
+        };
+
+        let mut pieces = Vec::with_capacity(pieces_count);
+        for piece_index in 0..pieces_count {
+            let piece = download_piece(peer, &info, piece_index);
+            pieces[piece_index] = piece;
+        }
+
+        let flatten_content: Vec<u8> = pieces.into_iter().flatten().collect();
+
+        let full_hash = sha1_it(&flatten_content);
+        assert_eq!(full_hash, info.hash);
+
+        let mut file = File::create(save_to).expect("Failed to open file");
+
+        file.write_all(&flatten_content).unwrap();
+        file.flush().expect("Failed to flush file");
+        println!("Downloaded {} to {}.", torrent_info_path, save_to);
     } else {
         println!("unknown command: {}", args[1])
     }

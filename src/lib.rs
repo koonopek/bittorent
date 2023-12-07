@@ -223,23 +223,28 @@ pub fn discover_peers(info: &MetaInfoFile) -> Vec<String> {
     let mut peers = Vec::new();
 
     for encoded_peer in encoded_peers {
-        let mut iterator = encoded_peer.iter();
-        let first_octet = iterator.next().unwrap();
-        let second_octet = iterator.next().unwrap();
-        let third_octet = iterator.next().unwrap();
-        let fourth_octet = iterator.next().unwrap();
-
-        let first_byte_port = *iterator.next().unwrap() as u16;
-        let second_byte_port = *iterator.next().unwrap() as u16;
-        let port = (first_byte_port << 8) | second_byte_port;
-        let peer_address = format!(
-            "{}.{}.{}.{}:{}",
-            first_octet, second_octet, third_octet, fourth_octet, port
-        );
+        let peer_address = parse_peer_address(encoded_peer);
         peers.push(peer_address);
     }
 
     return peers;
+}
+
+fn parse_peer_address(encoded_peer: &[u8]) -> String {
+    let mut iterator = encoded_peer.iter();
+    let first_octet = iterator.next().unwrap();
+    let second_octet = iterator.next().unwrap();
+    let third_octet = iterator.next().unwrap();
+    let fourth_octet = iterator.next().unwrap();
+
+    let first_byte_port = *iterator.next().unwrap() as u16;
+    let second_byte_port = *iterator.next().unwrap() as u16;
+    let port = (first_byte_port << 8) | second_byte_port;
+    let peer_address = format!(
+        "{}.{}.{}.{}:{}",
+        first_octet, second_octet, third_octet, fourth_octet, port
+    );
+    peer_address
 }
 
 pub fn download_piece(peer: &str, info: &MetaInfoFile, piece_index: usize) -> Vec<u8> {
@@ -267,28 +272,19 @@ pub fn download_piece(peer: &str, info: &MetaInfoFile, piece_index: usize) -> Ve
     loop {
         let current_chunk_to_read: i64 = length_to_read as i64 - (16 * 1024 * chunks_read) as i64;
         match current_chunk_to_read {
-            x if x < 0 => {
-                println!("End of read {}", chunks_read);
-                break;
-            }
-            x if x >= 16 * 1024 => {
-                println!("Full read {}", chunks_read);
-                request_piece_part(
-                    &mut connection,
-                    piece_index as u32,
-                    chunks_read as u32,
-                    16 * 1024,
-                )
-            }
-            x => {
-                println!("Part read {}", chunks_read);
-                request_piece_part(
-                    &mut connection,
-                    piece_index as u32,
-                    chunks_read as u32,
-                    x as u32,
-                )
-            }
+            x if x < 0 => break,
+            x if x >= 16 * 1024 => request_piece_part(
+                &mut connection,
+                piece_index as u32,
+                chunks_read as u32,
+                16 * 1024,
+            ),
+            x => request_piece_part(
+                &mut connection,
+                piece_index as u32,
+                chunks_read as u32,
+                x as u32,
+            ),
         }
         chunks_read += 1;
     }
@@ -296,10 +292,7 @@ pub fn download_piece(peer: &str, info: &MetaInfoFile, piece_index: usize) -> Ve
     let mut piece = Vec::with_capacity(info.piece_length);
     for _ in 0..chunks_read {
         let message = read_message(&mut connection);
-
         if message.message_type == MessageType::Piece {
-            // let piece_index = u32::from_be_bytes(message.payload[0..4].try_into().unwrap());
-            // let offset = u32::from_be_bytes(message.payload[4..8].try_into().unwrap());
             piece.extend_from_slice(&message.payload[8..])
         }
     }
