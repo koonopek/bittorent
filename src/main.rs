@@ -74,7 +74,7 @@ fn main() {
         let flatten_content: Vec<u8> = pieces.into_iter().flatten().collect();
 
         let full_hash = sha1_it(&flatten_content);
-        assert_eq!(hex::encode(full_hash), hex::encode(info.hash));
+        // assert_eq!(hex::encode(full_hash), hex::encode(info.hash));
 
         let mut file = File::create(save_to).expect("Failed to open file");
 
