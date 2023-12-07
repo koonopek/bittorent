@@ -1,6 +1,7 @@
 use std::{
+    cmp,
     fmt::Display,
-    fs,
+    fs::{self},
     io::{Read, Write},
     net::TcpStream,
     path::{Path, PathBuf},
@@ -17,6 +18,15 @@ pub enum BenDecodeErrors {
     DictError,
     ListError,
     UnexepctedChar,
+}
+
+#[derive(Debug, PartialEq)]
+enum MessageType {
+    Unchoked = 1,
+    Intrested = 2,
+    BitField = 5,
+    Request = 6,
+    Piece = 7,
 }
 
 pub fn decode_bencoded_value(
@@ -230,4 +240,159 @@ pub fn discover_peers(info: &MetaInfoFile) -> Vec<String> {
     }
 
     return peers;
+}
+
+pub fn download_piece(peer: &str, info: &MetaInfoFile, piece_index: usize) -> Vec<u8> {
+    let mut connection = handshake(peer, &info);
+
+    assert_eq!(
+        read_message(&mut connection).message_type,
+        MessageType::BitField
+    );
+
+    send_message(&mut connection, MessageType::Intrested, vec![]);
+
+    assert_eq!(
+        read_message(&mut connection).message_type,
+        MessageType::Unchoked
+    );
+
+    let mut chunks_read = 0;
+
+    let length_to_read = cmp::min(
+        info.length - (piece_index * info.piece_length),
+        info.piece_length,
+    );
+
+    loop {
+        let current_chunk_to_read: i64 = length_to_read as i64 - (16 * 1024 * chunks_read) as i64;
+        match current_chunk_to_read {
+            x if x < 0 => {
+                println!("End of read {}", chunks_read);
+                break;
+            }
+            x if x >= 16 * 1024 => {
+                println!("Full read {}", chunks_read);
+                request_piece_part(
+                    &mut connection,
+                    piece_index as u32,
+                    chunks_read as u32,
+                    16 * 1024,
+                )
+            }
+            x => {
+                println!("Part read {}", chunks_read);
+                request_piece_part(
+                    &mut connection,
+                    piece_index as u32,
+                    chunks_read as u32,
+                    x as u32,
+                )
+            }
+        }
+        chunks_read += 1;
+    }
+
+    let mut piece = Vec::with_capacity(info.piece_length);
+    for _ in 0..chunks_read {
+        let message = read_message(&mut connection);
+
+        if message.message_type == MessageType::Piece {
+            // let piece_index = u32::from_be_bytes(message.payload[0..4].try_into().unwrap());
+            // let offset = u32::from_be_bytes(message.payload[4..8].try_into().unwrap());
+            piece.extend_from_slice(&message.payload[8..])
+        }
+    }
+
+    println!(
+        "Checking piece hash {} == {}",
+        info.piece_hashes[piece_index],
+        hex::encode(sha1_it(&piece))
+    );
+
+    assert_eq!(info.piece_hashes[piece_index], hex::encode(sha1_it(&piece)));
+
+    connection
+        .tcp_stream
+        .shutdown(std::net::Shutdown::Both)
+        .expect("Failed to close tcp stream");
+
+    piece
+}
+
+fn request_piece_part(
+    connection: &mut PeerConnection,
+    piece_index: u32,
+    offset_block: u32,
+    bytes_to_read: u32,
+) {
+    let begin: u32 = offset_block * 16 * 1024;
+    println!(
+        "Requesting piece {} begin {} length {}",
+        piece_index, begin, bytes_to_read
+    );
+
+    let mut payload = Vec::with_capacity(12);
+    payload.extend_from_slice(&piece_index.to_be_bytes());
+    payload.extend_from_slice(&begin.to_be_bytes());
+    payload.extend_from_slice(&bytes_to_read.to_be_bytes());
+
+    send_message(connection, MessageType::Request, payload);
+}
+
+fn send_message(connection: &mut PeerConnection, message_type: MessageType, payload: Vec<u8>) {
+    let payload_len = payload.len() + 1;
+
+    let mut message_payload: Vec<u8> = Vec::with_capacity(4 + payload_len);
+
+    message_payload.extend_from_slice(&payload_len.to_be_bytes());
+    message_payload.push(message_type as u8);
+    message_payload.extend(payload);
+
+    connection
+        .tcp_stream
+        .write_all(&message_payload)
+        .expect("Failed to write to tcp stream");
+}
+
+struct Message {
+    payload: Vec<u8>,
+    message_type: MessageType,
+}
+
+fn read_message(connection: &mut PeerConnection) -> Message {
+    let mut payload_size_buf: [u8; 4] = [0; 4];
+    connection
+        .tcp_stream
+        .read_exact(&mut payload_size_buf)
+        .expect("failed to reade message size");
+
+    let mut message_id_buf: [u8; 1] = [0; 1];
+    connection
+        .tcp_stream
+        .read_exact(&mut message_id_buf)
+        .expect("Failed to read message id");
+
+    let message_type = match message_id_buf[0] {
+        1 => MessageType::Unchoked,
+        5 => MessageType::BitField,
+        7 => MessageType::Piece,
+        id => panic!("Unknown message type {}", id),
+    };
+
+    let payload_size = match u32::from_be_bytes(payload_size_buf) {
+        x if x == 0 => 0 as usize,
+        x => (x - 1) as usize,
+    };
+
+    let mut payload = vec![0; payload_size];
+    connection
+        .tcp_stream
+        .read_exact(&mut payload)
+        .expect("Failed to read buffer");
+
+    Message {
+        payload,
+        message_type,
+    }
 }
