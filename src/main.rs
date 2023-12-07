@@ -113,7 +113,11 @@ fn main() {
             }
         }
 
-        println!("Checking piece hash {} == {}",info.piece_hashes[piece_index], hex::encode(sha1_it(&piece)))
+        println!(
+            "Checking piece hash {} == {}",
+            info.piece_hashes[piece_index],
+            hex::encode(sha1_it(&piece))
+        );
 
         assert_eq!(info.piece_hashes[piece_index], hex::encode(sha1_it(&piece)));
 
