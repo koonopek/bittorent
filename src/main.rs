@@ -65,7 +65,7 @@ fn main() {
             (count, _) => count,
         };
 
-        let mut pieces = Vec::with_capacity(pieces_count);
+        let mut pieces = vec![Vec::new(); pieces_count];
         for piece_index in 0..pieces_count {
             let piece = download_piece(peer, &info, piece_index);
             pieces[piece_index] = piece;
