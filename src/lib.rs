@@ -125,9 +125,7 @@ pub fn get_metafile_info(file_path: &String) -> MetaInfoFile {
         .unwrap();
 
     let bencoded_info = serde_bencode::to_bytes(&info["info"]).unwrap();
-    let mut hasher = Sha1::new();
-    hasher.update(&bencoded_info);
-    let hash = hasher.finalize();
+    let hash = sha1_it(&bencoded_info);
 
     let piece_length = info["info"].as_object().unwrap()["piece length"]
         .as_u64()
@@ -148,6 +146,13 @@ pub fn get_metafile_info(file_path: &String) -> MetaInfoFile {
         piece_length: piece_length as usize,
         piece_hashes: pieces,
     };
+}
+
+pub fn sha1_it(bytes: &Vec<u8>) -> Vec<u8> {
+    let mut hasher = Sha1::new();
+    hasher.update(&bytes);
+    let hash = hasher.finalize();
+    hash.to_vec()
 }
 
 pub struct PeerConnection {

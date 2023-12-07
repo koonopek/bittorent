@@ -1,11 +1,11 @@
 use std::{
     cmp, env,
-    fs::{File, OpenOptions},
-    io::{self, Read, Seek, Write},
+    fs::File,
+    io::{Read, Write},
 };
 
 use bittorrent_starter_rust::{
-    decode_bencoded_value, discover_peers, get_metafile_info, handshake,
+    decode_bencoded_value, discover_peers, get_metafile_info, handshake, sha1_it,
 };
 use serde_json::json;
 
@@ -60,7 +60,7 @@ fn main() {
 
         let mut piece_content = File::create(save_to).expect("Failed to open file");
 
-        let mut length_to_read = cmp::min(
+        let length_to_read = cmp::min(
             info.length - (piece_index * info.piece_length),
             info.piece_length,
         );
@@ -102,13 +102,21 @@ fn main() {
             chunks_read += 1;
         }
 
+        let mut piece = Vec::with_capacity(info.piece_length);
         for _ in 0..chunks_read {
             let message = read_message(&mut connection);
 
             if message.message_type == MessageType::Piece {
-                piece_content.write(&message.payload[8..]).unwrap();
+                // let piece_index = u32::from_be_bytes(message.payload[0..4].try_into().unwrap());
+                // let offset = u32::from_be_bytes(message.payload[4..8].try_into().unwrap());
+                piece.extend_from_slice(&message.payload[8..])
             }
         }
+
+        assert_eq!(info.piece_hashes[piece_index], hex::encode(sha1_it(&piece)));
+
+        // TODO: verify hash
+        piece_content.write(&piece).unwrap();
 
         println!("Piece {} downloaded to {}.", piece_index, save_to);
 
