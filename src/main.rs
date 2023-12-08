@@ -5,7 +5,10 @@ use std::{
 };
 
 use bittorrent_starter_rust::{
-    decode_bencoded_value, discover_peers, download_piece, get_metafile_info, handshake, sha1_it,
+    bencode::decode_bencoded_value,
+    get_metafile_info,
+    peers::{discover_peers, handshake},
+    pieces::download_piece,
 };
 use serde_json::json;
 
@@ -43,7 +46,7 @@ fn main() {
             .get((piece_index % 3) as usize)
             .expect("Expected at least one peer");
 
-        let piece = download_piece(peer, &info, piece_index);
+        let piece = download_piece(peer, &info, piece_index).1;
 
         let mut file = File::create(save_to).expect("Failed to open file");
         file.write(&piece).unwrap();
@@ -55,7 +58,7 @@ fn main() {
         let info = get_metafile_info(torrent_info_path);
         let peers = discover_peers(&info);
         println!("Peers {:?}", peers);
-        let peer = peers.get(0).expect("Expected at least one peer");
+        let peer = peers.get(0).unwrap();
 
         let pieces_count = match (
             info.length / info.piece_length,
@@ -66,19 +69,17 @@ fn main() {
         };
 
         let mut pieces = vec![Vec::new(); pieces_count];
-        for piece_index in 0..pieces_count {
-            let piece = download_piece(peer, &info, piece_index);
+
+        for i in 0..pieces_count {
+            let (piece_index, piece) = download_piece(peer, &info, i);
+            println!("Fetched piece {}/{pieces_count}", i + 1);
             pieces[piece_index] = piece;
         }
 
-        let flatten_content: Vec<u8> = pieces.into_iter().flatten().collect();
-
-        let full_hash = sha1_it(&flatten_content);
-        // assert_eq!(hex::encode(full_hash), hex::encode(info.hash));
+        let io_vector: Vec<_> = pieces.iter().map(|x| IoSlice::new(x)).collect();
 
         let mut file = File::create(save_to).expect("Failed to open file");
-
-        file.write_all(&flatten_content).unwrap();
+        file.write_vectored(&io_vector).unwrap();
         file.flush().expect("Failed to flush file");
         println!("Downloaded {} to {}.", torrent_info_path, save_to);
     } else {
