@@ -68,14 +68,23 @@ fn main() {
 
         let jobs: Vec<_> = chunks_piece_indexes.zip(peers.into_iter()).collect();
 
-        println!("{:?}", jobs);
+        println!("Scheduled piece indexes to download per peer {:?}", jobs);
 
         let mut pieces: Vec<_> = jobs
             .into_par_iter()
             .map(|(indexes, peer)| {
                 indexes
                     .into_iter()
-                    .map(|piece_index| download_piece(peer, &info, *piece_index))
+                    .map(|piece_index| {
+                        let result = download_piece(peer, &info, *piece_index);
+                        println!(
+                            "Peer {} downloaded {}/{}",
+                            peer,
+                            piece_index + 1,
+                            pieces_count
+                        );
+                        return result;
+                    })
                     .collect::<Vec<_>>()
             })
             .flatten()
