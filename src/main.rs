@@ -60,29 +60,25 @@ fn main() {
         let peers = &discover_peers(&info);
         println!("Peers {:?}", peers);
 
-        let pieces_count = match (
-            info.length / info.piece_length,
-            info.length % info.piece_length,
-        ) {
-            (count, reminder) if reminder > 0 => count + 1,
-            (count, _) => count,
-        };
+        let pieces_count = int_div_with_ceil(info.length, info.piece_length);
 
-        let pieces_indexes: Vec<_> = (0..pieces_count).zip(peers.into_iter().cycle()).collect();
+        let pieces_indexes: Vec<_> = (0..pieces_count).collect();
+        let chunk_size: usize = int_div_with_ceil(pieces_count, peers.len());
+        let chunks_piece_indexes = pieces_indexes.chunks(chunk_size);
 
-        println!("{:?}", pieces_indexes);
+        let jobs: Vec<_> = chunks_piece_indexes.zip(peers.into_iter()).collect();
 
-        let mut pieces: Vec<_> = pieces_indexes
+        println!("{:?}", jobs);
+
+        let mut pieces: Vec<_> = jobs
             .into_par_iter()
-            .map(|(piece_index, peer)| {
-                let result = download_piece(peer, &info, piece_index);
-                println!(
-                    "{peer} downloaded piece {}/{}",
-                    piece_index + 1,
-                    pieces_count
-                );
-                return result;
+            .map(|(indexes, peer)| {
+                indexes
+                    .into_iter()
+                    .map(|piece_index| download_piece(peer, &info, *piece_index))
+                    .collect::<Vec<_>>()
             })
+            .flatten()
             .collect();
 
         pieces.sort_unstable_by_key(|x| x.0);
@@ -96,4 +92,11 @@ fn main() {
     } else {
         println!("unknown command: {}", args[1])
     }
+}
+
+fn int_div_with_ceil(a: usize, b: usize) -> usize {
+    match (a / b, a % b) {
+        (count, reminder) if reminder > 0 => return count + 1,
+        (count, _) => return count,
+    };
 }
