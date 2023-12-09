@@ -68,7 +68,9 @@ fn main() {
             (count, _) => count,
         };
 
-        let pieces_indexes: Vec<_> = (0..pieces_count).zip(peers).collect();
+        let pieces_indexes: Vec<_> = (0..pieces_count).zip(peers.into_iter().cycle()).collect();
+
+        println!("{:?}", pieces_indexes);
 
         let mut pieces: Vec<_> = pieces_indexes
             .into_par_iter()
