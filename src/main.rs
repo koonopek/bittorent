@@ -10,6 +10,7 @@ use bittorrent_starter_rust::{
     peers::{discover_peers, handshake},
     pieces::download_piece,
 };
+use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use serde_json::json;
 
 fn main() {
@@ -56,9 +57,8 @@ fn main() {
         let (save_to, torrent_info_path) = (&args[3], &args[4]);
 
         let info = get_metafile_info(torrent_info_path);
-        let peers = discover_peers(&info);
+        let peers = &discover_peers(&info);
         println!("Peers {:?}", peers);
-        let peer = peers.get(0).unwrap();
 
         let pieces_count = match (
             info.length / info.piece_length,
@@ -68,15 +68,24 @@ fn main() {
             (count, _) => count,
         };
 
-        let mut pieces = vec![Vec::new(); pieces_count];
+        let pieces_indexes: Vec<_> = (0..pieces_count).zip(peers).collect();
 
-        for i in 0..pieces_count {
-            let (piece_index, piece) = download_piece(peer, &info, i);
-            println!("Fetched piece {}/{pieces_count}", i + 1);
-            pieces[piece_index] = piece;
-        }
+        let mut pieces: Vec<_> = pieces_indexes
+            .into_par_iter()
+            .map(|(piece_index, peer)| {
+                let result = download_piece(peer, &info, piece_index);
+                println!(
+                    "{peer} downloaded piece {}/{}",
+                    piece_index + 1,
+                    pieces_count
+                );
+                return result;
+            })
+            .collect();
 
-        let io_vector: Vec<_> = pieces.iter().map(|x| IoSlice::new(x)).collect();
+        pieces.sort_unstable_by_key(|x| x.0);
+
+        let io_vector: Vec<_> = pieces.iter().map(|x| IoSlice::new(&x.1)).collect();
 
         let mut file = File::create(save_to).expect("Failed to open file");
         file.write_vectored(&io_vector).unwrap();
