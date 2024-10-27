@@ -1,4 +1,6 @@
 use std::{
+    borrow::Cow,
+    collections::HashMap,
     env,
     fs::File,
     io::{IoSlice, Write},
@@ -98,8 +100,28 @@ fn main() {
         file.write_vectored(&io_vector).unwrap();
         file.flush().expect("Failed to flush file");
         println!("Downloaded {} to {}.", torrent_info_path, save_to);
+    } else if command == "magnet_parse" {
+        let magnet_link = &args[2];
+
+        let (prefix, magnet_params_encoded) = magnet_link.split_once(":?").unwrap();
+
+        assert_eq!(prefix, "magnet");
+
+        // decode url
+        let parse = url::form_urlencoded::parse(magnet_params_encoded.as_bytes());
+        let decoded_url: HashMap<String, String> = parse.into_owned().collect();
+
+        assert_eq!(decoded_url.len(), 3);
+
+        let (xt_prefix, hash) = decoded_url.get("xt").expect("Expected xt").split_at(9);
+        assert_eq!(xt_prefix, "urn:btih:");
+        let tracker_url = decoded_url.get("tr").expect("Expected tr");
+        let file_name = decoded_url.get("dn").expect("Expected file_name");
+
+        println!("Tracker URL: {}", tracker_url);
+        println!("Info Hash: {}", hash);
     } else {
-        println!("unknown command: {}", args[1])
+        println!("unknown command: {}", command)
     }
 }
 
