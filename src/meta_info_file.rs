@@ -8,6 +8,7 @@ use crate::{
     bencode::{decode_bencoded_value, BenDecodeErrors},
     discover_peers::discover_peers,
     magnet_link::parse_magnet_link_url,
+    peer_connection::PeerConnection,
     sha1_it,
 };
 
@@ -69,16 +70,16 @@ impl MetaInfo {
     pub fn from_magnet_link_url(magnet_link_url: &str) -> Self {
         let magnet_link = parse_magnet_link_url(magnet_link_url);
 
+        let hash_bytes = hex::decode(&magnet_link.hash).expect("failed to decode magnet link hash");
+
         // some random number, because we don't know the length before fetching metadata
-        let peers = discover_peers(
-            &hex::decode(magnet_link.hash).expect("failed to decode magnet link hash"),
-            999,
-            &magnet_link.tracker_url,
-        );
+        let peers = discover_peers(&hash_bytes, 999, &magnet_link.tracker_url);
 
         let peer = peers.first().unwrap();
 
-        println!("Peer ID: {}", peer);
+        let peer_connection = PeerConnection::handshake(peer, &hash_bytes);
+
+        println!("Peer ID: {}", peer_connection.peer_id);
 
         return MetaInfo {
             tracker_url: String::new(),

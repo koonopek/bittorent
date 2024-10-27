@@ -109,6 +109,13 @@ fn main() {
     } else if command == "magnet_info" {
         let magnet_link = &args[2];
 
+        let magnet_link = parse_magnet_link_url(magnet_link);
+
+        println!("Tracker URL: {}", magnet_link.tracker_url);
+        println!("Info Hash: {}", magnet_link.hash);
+    } else if command == "magnet_handshake" {
+        let magnet_link = &args[2];
+
         MetaInfo::from_magnet_link_url(magnet_link);
     } else {
         println!("unknown command: {}", command)

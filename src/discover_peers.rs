@@ -26,6 +26,7 @@ pub fn discover_peers(info_hash: &[u8], left: usize, tracker_url: &str) -> Vec<S
     let mut peers = Vec::new();
 
     for encoded_peer in encoded_peers {
+        println!("Encoded Peer: {:?}", encoded_peer);
         let peer_address = parse_peer_address(encoded_peer);
         peers.push(peer_address);
     }
