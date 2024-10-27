@@ -1,10 +1,12 @@
 use std::{
+    borrow::Cow,
+    collections::HashMap,
     env,
     fs::File,
     io::{IoSlice, Write},
 };
 
-use bittorrent::{
+use bittorrent_starter_rust::{
     bencode::decode_bencoded_value,
     get_metafile_info,
     peers::{discover_peers, handshake},
@@ -12,6 +14,7 @@ use bittorrent::{
 };
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use serde_json::json;
+use url::Url;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -98,8 +101,30 @@ fn main() {
         file.write_vectored(&io_vector).unwrap();
         file.flush().expect("Failed to flush file");
         println!("Downloaded {} to {}.", torrent_info_path, save_to);
+    } else if command == "magnet_parse" {
+        let magnet_link = &args[2];
+
+        let (prefix, magnet_params_encoded) = magnet_link.split_once(":?").unwrap();
+
+        assert_eq!(prefix, "magnet");
+
+        // decode url
+        let decoded_url: HashMap<String, String> =
+            url::form_urlencoded::parse(magnet_params_encoded.as_bytes())
+                .into_owned()
+                .collect();
+
+        assert_eq!(decoded_url.len(), 3);
+
+        let (xt_prefix, hash) = decoded_url.get("xt").expect("Expected xt").split_at(9);
+        assert_eq!(xt_prefix, "urn:btih:");
+        let tracker_url = decoded_url.get("tr").expect("Expected tr");
+        let file_name = decoded_url.get("dn").expect("Expected file_name");
+
+        println!("Tracker URL: {}", tracker_url);
+        println!("Info Hash: {}", hash);
     } else {
-        println!("unknown command: {}", args[1])
+        println!("unknown command: {}", command)
     }
 }
 
