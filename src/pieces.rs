@@ -1,23 +1,23 @@
 use std::cmp;
 
 use crate::{
-    messaging::{read_message, send_message, MessageType},
-    peers::{handshake, PeerConnection},
-    sha1_it, MetaInfoFile,
+    meta_info_file::MetaInfo,
+    peer_connection::{MessageType, PeerConnection},
+    sha1_it,
 };
 
-pub fn download_piece(peer: &str, info: &MetaInfoFile, piece_index: usize) -> (usize, Vec<u8>) {
-    let mut connection = handshake(peer, &info);
+pub fn download_piece(peer: &str, info: &MetaInfo, piece_index: usize) -> (usize, Vec<u8>) {
+    let mut connection = PeerConnection::handshake(peer, &info.hash);
 
     assert_eq!(
-        read_message(&mut connection).message_type,
+        connection.read_message().message_type,
         MessageType::BitField
     );
 
-    send_message(&mut connection, MessageType::Intrested, vec![]);
+    connection.send_message(MessageType::Interested, vec![]);
 
     assert_eq!(
-        read_message(&mut connection).message_type,
+        connection.read_message().message_type,
         MessageType::Unchoked
     );
 
@@ -50,10 +50,11 @@ pub fn download_piece(peer: &str, info: &MetaInfoFile, piece_index: usize) -> (u
 
     let mut piece = Vec::with_capacity(info.piece_length);
     for _ in 0..chunks_read {
-        let message = read_message(&mut connection);
+        let message = connection.read_message();
         if message.message_type == MessageType::Piece {
             piece.extend_from_slice(&message.payload[8..])
         }
+        // FIXME: handle different message
     }
 
     println!(
@@ -83,5 +84,5 @@ pub fn request_piece_part(
     payload.extend_from_slice(&piece_index.to_be_bytes());
     payload.extend_from_slice(&begin.to_be_bytes());
     payload.extend_from_slice(&bytes_to_read.to_be_bytes());
-    send_message(connection, MessageType::Request, payload);
+    connection.send_message(MessageType::Request, payload);
 }

@@ -1,15 +1,13 @@
 use std::{
-    borrow::Cow,
-    collections::HashMap,
     env,
     fs::File,
     io::{IoSlice, Write},
+    path::PathBuf,
 };
 
 use bittorrent_starter_rust::{
-    bencode::decode_bencoded_value,
-    get_metafile_info,
-    peers::{discover_peers, handshake},
+    bencode::decode_bencoded_value, discover_peers::discover_peers,
+    magnet_link::parse_magnet_link_url, meta_info_file::MetaInfo, peer_connection::PeerConnection,
     pieces::download_piece,
 };
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
@@ -26,24 +24,25 @@ fn main() {
         let decoded_value = decode_bencoded_value(&mut encoded_value).unwrap();
         println!("{}", json!(decoded_value));
     } else if command == "info" {
-        let info = get_metafile_info(file_path);
+        let info = MetaInfo::from_path(&PathBuf::from(file_path));
         print!("{}", info);
     } else if command == "peers" {
-        let info = get_metafile_info(file_path);
-        let peers = discover_peers(&info);
+        let info = MetaInfo::from_path(&PathBuf::from(file_path));
+        let peers = discover_peers(&info.hash, info.piece_length, &info.tracker_url);
         println!("{:?}", peers);
     } else if command == "handshake" {
-        let info = get_metafile_info(file_path);
+        let info = MetaInfo::from_path(&PathBuf::from(file_path));
         let peer = &args[3];
 
-        let connection = handshake(peer, &info);
+        let connection = PeerConnection::handshake(peer, &info.hash);
         println!("Handshaked with Peer ID: {}", connection.peer_id);
     } else if command == "download_piece" {
         let (save_to, torrent_info_path, piece_number) = (&args[3], &args[4], &args[5]);
         let piece_index: usize = piece_number.parse().expect("Failed to parse piece index");
 
-        let info = get_metafile_info(torrent_info_path);
-        let peers = discover_peers(&info);
+        let info = MetaInfo::from_path(&PathBuf::from(torrent_info_path));
+        let discover_peers = discover_peers(&info.hash, info.piece_length, &info.tracker_url);
+        let peers = discover_peers;
         println!("Peers {:?}", peers);
         let peer = peers
             .get((piece_index % 3) as usize)
@@ -58,8 +57,8 @@ fn main() {
     } else if command == "download" {
         let (save_to, torrent_info_path) = (&args[3], &args[4]);
 
-        let info = get_metafile_info(torrent_info_path);
-        let peers = &discover_peers(&info);
+        let info = MetaInfo::from_path(&PathBuf::from(torrent_info_path));
+        let peers = discover_peers(&info.hash, info.piece_length, &info.tracker_url);
         println!("Peers {:?}", peers);
 
         let pieces_count = int_div_with_ceil(info.length, info.piece_length);
@@ -78,7 +77,7 @@ fn main() {
                 indexes
                     .into_iter()
                     .map(|piece_index| {
-                        let result = download_piece(peer, &info, *piece_index);
+                        let result = download_piece(&peer, &info, *piece_index);
                         println!(
                             "Peer {} downloaded {}/{}",
                             peer,
@@ -103,23 +102,14 @@ fn main() {
     } else if command == "magnet_parse" {
         let magnet_link = &args[2];
 
-        let (prefix, magnet_params_encoded) = magnet_link.split_once(":?").unwrap();
+        let magnet_link = parse_magnet_link_url(magnet_link);
 
-        assert_eq!(prefix, "magnet");
+        println!("Tracker URL: {}", magnet_link.tracker_url);
+        println!("Info Hash: {}", magnet_link.hash);
+    } else if command == "magnet_info" {
+        let magnet_link = &args[2];
 
-        // decode url
-        let parse = url::form_urlencoded::parse(magnet_params_encoded.as_bytes());
-        let decoded_url: HashMap<String, String> = parse.into_owned().collect();
-
-        assert_eq!(decoded_url.len(), 3);
-
-        let (xt_prefix, hash) = decoded_url.get("xt").expect("Expected xt").split_at(9);
-        assert_eq!(xt_prefix, "urn:btih:");
-        let tracker_url = decoded_url.get("tr").expect("Expected tr");
-        let file_name = decoded_url.get("dn").expect("Expected file_name");
-
-        println!("Tracker URL: {}", tracker_url);
-        println!("Info Hash: {}", hash);
+        MetaInfo::from_magnet_link_url(magnet_link);
     } else {
         println!("unknown command: {}", command)
     }

@@ -1,53 +1,16 @@
-use std::{
-    io::{Read, Write},
-    net::TcpStream,
-};
+use crate::bencode::decode_bencoded_value;
 
-use crate::{bencode::decode_bencoded_value, MetaInfoFile};
-
-pub struct PeerConnection {
-    pub tcp_stream: TcpStream,
-    pub peer_id: String,
-}
-
-pub fn handshake(peer: &str, info: &MetaInfoFile) -> PeerConnection {
-    println!("Connection to peer {}", peer);
-    let mut stream = TcpStream::connect(peer).expect("Failed to connect to peer");
-
-    let mut payload = Vec::with_capacity(68); // 28 + 20 + 20
-    payload.push(19);
-    payload.extend_from_slice(b"BitTorrent protocol\x00\x00\x00\x00\x00\x00\x00\x00");
-    payload.extend_from_slice(&info.hash);
-    payload.extend_from_slice(b"00112233445566778899");
-
-    stream
-        .write_all(&payload)
-        .expect("Failed to write to tcp stream");
-
-    let mut return_message_buf: [u8; 68] = [0; 68];
-    stream
-        .read_exact(&mut return_message_buf)
-        .expect("Failed to read peer handshake response");
-
-    let peer_id = hex::encode(&return_message_buf[48..68]);
-
-    PeerConnection {
-        tcp_stream: stream,
-        peer_id,
-    }
-}
-
-pub fn discover_peers(info: &MetaInfoFile) -> Vec<String> {
-    let info_hash_encoded: String = unsafe { String::from_utf8_unchecked(info.hash.to_vec()) };
+pub fn discover_peers(info_hash: &[u8], left: usize, tracker_url: &str) -> Vec<String> {
+    let info_hash_encoded: String = unsafe { String::from_utf8_unchecked(info_hash.to_vec()) };
     let response = reqwest::blocking::Client::new()
-        .get(&info.trackter_url)
+        .get(tracker_url)
         .query(&[
             ("info_hash", info_hash_encoded.as_str()),
             ("peer_id", "00112233445566778899"),
             ("port", "6881"),
             ("uploaded", "0"),
             ("downloaded", "0"),
-            ("left", &info.length.to_string()),
+            ("left", &left.to_string()),
             ("compact", "1"),
         ])
         .send()
