@@ -4,11 +4,13 @@ use std::{
     path::{Path, PathBuf},
 };
 
+use serde::{Deserialize, Serialize};
+
 use crate::{
     bencode::{decode_bencoded_value, BenDecodeErrors},
     discover_peers::discover_peers,
     magnet_link::parse_magnet_link_url,
-    peer_connection::PeerConnection,
+    peer_connection::{MessageType, PeerConnection},
     sha1_it,
 };
 
@@ -32,6 +34,16 @@ impl Display for MetaInfo {
         }
         Ok(())
     }
+}
+
+#[derive(Serialize, Deserialize)]
+struct MetadataHandshakePayload {
+    ut_metadata: i32,
+}
+
+#[derive(Serialize, Deserialize)]
+struct MetadataHandshakePayloadEnvelope {
+    m: MetadataHandshakePayload,
 }
 
 impl MetaInfo {
@@ -77,14 +89,34 @@ impl MetaInfo {
 
         let peer = peers.first().unwrap();
 
-        let peer_connection = PeerConnection::handshake(peer, &hash_bytes);
+        let mut peer_connection = PeerConnection::handshake(peer, &hash_bytes, true);
+
+        let message = peer_connection.read_message();
+        assert_eq!(message.message_type, MessageType::BitField);
+
+        // we could choose different peer
+        assert_eq!(peer_connection.extension_enabled, true);
+
+        let payload = MetadataHandshakePayloadEnvelope {
+            m: MetadataHandshakePayload { ut_metadata: 1 },
+        };
+
+        let mut handshake_message = vec![0; 1];
+        handshake_message.extend_from_slice(&serde_bencode::to_bytes(&payload).unwrap());
+        peer_connection.send_message(MessageType::Extended, handshake_message);
+
+        let message = peer_connection.read_message();
+        assert_eq!(message.message_type, MessageType::Extended);
+
+        // let payload = decode_bencoded_value(&mut message.payload.into_iter()).unwrap();
+        // assert_eq!(payload["m"]["ut_metadata"], 1);
 
         println!("Peer ID: {}", peer_connection.peer_id);
 
         return MetaInfo {
-            tracker_url: String::new(),
+            tracker_url: magnet_link.tracker_url.clone(),
             length: 0,
-            hash: Vec::new(),
+            hash: hash_bytes.to_vec(),
             piece_length: 0,
             piece_hashes: Vec::new(),
         };

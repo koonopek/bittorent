@@ -34,7 +34,7 @@ fn main() {
         let info = MetaInfo::from_path(&PathBuf::from(file_path));
         let peer = &args[3];
 
-        let connection = PeerConnection::handshake(peer, &info.hash);
+        let connection = PeerConnection::handshake(peer, &info.hash, false);
         println!("Handshaked with Peer ID: {}", connection.peer_id);
     } else if command == "download_piece" {
         let (save_to, torrent_info_path, piece_number) = (&args[3], &args[4], &args[5]);

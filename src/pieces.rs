@@ -7,7 +7,7 @@ use crate::{
 };
 
 pub fn download_piece(peer: &str, info: &MetaInfo, piece_index: usize) -> (usize, Vec<u8>) {
-    let mut connection = PeerConnection::handshake(peer, &info.hash);
+    let mut connection = PeerConnection::handshake(peer, &info.hash, false);
 
     assert_eq!(
         connection.read_message().message_type,
@@ -32,17 +32,11 @@ pub fn download_piece(peer: &str, info: &MetaInfo, piece_index: usize) -> (usize
         let current_chunk_to_read: i64 = length_to_read as i64 - (16 * 1024 * chunks_read) as i64;
         match current_chunk_to_read {
             x if x <= 0 => break,
-            x if x >= 16 * 1024 => request_piece_part(
-                &mut connection,
-                piece_index as u32,
-                chunks_read as u32,
-                16 * 1024,
-            ),
             x => request_piece_part(
                 &mut connection,
                 piece_index as u32,
                 chunks_read as u32,
-                x as u32,
+                cmp::min(16 * 1024, x) as u32,
             ),
         }
         chunks_read += 1;
