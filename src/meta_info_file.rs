@@ -108,10 +108,13 @@ impl MetaInfo {
         let message = peer_connection.read_message();
         assert_eq!(message.message_type, MessageType::Extended);
 
-        // let payload = decode_bencoded_value(&mut message.payload.into_iter()).unwrap();
-        // assert_eq!(payload["m"]["ut_metadata"], 1);
+        let payload = decode_bencoded_value(&mut message.payload.into_iter()).unwrap();
 
         println!("Peer ID: {}", peer_connection.peer_id);
+        println!(
+            "Peer Metadata Extension ID: {}",
+            payload["m"]["ut_metadata"]
+        );
 
         return MetaInfo {
             tracker_url: magnet_link.tracker_url.clone(),
