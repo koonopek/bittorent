@@ -106,7 +106,7 @@ impl PeerConnection {
                     .read_exact(&mut extended_message_id_buf)
                     .expect("Failed to read extended message id");
 
-                assert_eq!(extended_message_id_buf[0], 0);
+                // assert_eq!(extended_message_id_buf[0], 0);
 
                 let payload_size = match u32::from_be_bytes(payload_size_buf) {
                     x if x == 0 => 0 as usize,

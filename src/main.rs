@@ -117,6 +117,10 @@ fn main() {
         let magnet_link = &args[2];
 
         MetaInfo::from_magnet_link_url(magnet_link);
+    } else if command == "magnet_info" {
+        let magnet_link = &args[2];
+
+        MetaInfo::from_magnet_link_url(magnet_link);
     } else {
         println!("unknown command: {}", command)
     }

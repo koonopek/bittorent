@@ -7,7 +7,7 @@ use std::{
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    bencode::{decode_bencoded_value, BenDecodeErrors},
+    bencode::{self, decode_bencoded_value, BenDecodeErrors},
     discover_peers::discover_peers,
     magnet_link::parse_magnet_link_url,
     peer_connection::{MessageType, PeerConnection},
@@ -44,6 +44,12 @@ struct MetadataHandshakePayload {
 #[derive(Serialize, Deserialize)]
 struct MetadataHandshakePayloadEnvelope {
     m: MetadataHandshakePayload,
+}
+
+#[derive(Serialize, Deserialize)]
+struct MetadataMessagePayload {
+    msg_type: i32,
+    piece: i32,
 }
 
 impl MetaInfo {
@@ -115,6 +121,26 @@ impl MetaInfo {
             "Peer Metadata Extension ID: {}",
             payload["m"]["ut_metadata"]
         );
+
+        let peer_extension_id = &payload["m"]["ut_metadata"];
+
+        let peer_extension_id: u8 = match peer_extension_id {
+            serde_json::Value::Number(n) => u8::try_from(n.as_i64().unwrap()).unwrap(),
+            _ => panic!("wrong value"),
+        };
+
+        let mut payload: Vec<u8> = vec![peer_extension_id; 1];
+        payload.extend(
+            serde_bencode::to_bytes(&MetadataMessagePayload {
+                msg_type: 0,
+                piece: 0,
+            })
+            .unwrap(),
+        );
+        peer_connection.send_message(MessageType::Extended, payload);
+
+        let message = peer_connection.read_message();
+        assert_eq!(message.message_type, MessageType::Extended);
 
         return MetaInfo {
             tracker_url: magnet_link.tracker_url.clone(),
