@@ -142,6 +142,10 @@ impl MetaInfo {
         let message = peer_connection.read_message();
         assert_eq!(message.message_type, MessageType::Extended);
 
+        let response = bencode::decode_bencoded_value(&mut message.payload.into_iter()).unwrap();
+
+        dbg!(response);
+
         return MetaInfo {
             tracker_url: magnet_link.tracker_url.clone(),
             length: 0,
