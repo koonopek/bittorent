@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 pub struct MagnetLink {
     pub tracker_url: String,
-    pub hash: String,
+    pub hash: Vec<u8>,
     pub file_name: String,
 }
 
@@ -24,7 +24,7 @@ pub fn parse_magnet_link_url(magnet_link_url: &str) -> MagnetLink {
 
     MagnetLink {
         tracker_url: tracker_url.to_string(),
-        hash: hash.to_string(),
+        hash: hex::decode(hash).expect("failed to parse hash"),
         file_name: file_name.to_string(),
     }
 }

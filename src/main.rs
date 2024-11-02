@@ -61,43 +61,7 @@ fn main() {
         let peers = discover_peers(&info.hash, info.piece_length, &info.tracker_url);
         println!("Peers {:?}", peers);
 
-        let pieces_count = int_div_with_ceil(info.length, info.piece_length);
-
-        let pieces_indexes: Vec<_> = (0..pieces_count).collect();
-        let chunk_size: usize = int_div_with_ceil(pieces_count, peers.len());
-        let chunks_piece_indexes = pieces_indexes.chunks(chunk_size);
-
-        let jobs: Vec<_> = chunks_piece_indexes.zip(peers.into_iter()).collect();
-
-        println!("Scheduled piece indexes to download per peer {:?}", jobs);
-
-        let mut pieces: Vec<_> = jobs
-            .into_par_iter()
-            .map(|(indexes, peer)| {
-                indexes
-                    .into_iter()
-                    .map(|piece_index| {
-                        let result = download_piece(&peer, &info, *piece_index);
-                        println!(
-                            "Peer {} downloaded {}/{}",
-                            peer,
-                            piece_index + 1,
-                            pieces_count
-                        );
-                        return result;
-                    })
-                    .collect::<Vec<_>>()
-            })
-            .flatten()
-            .collect();
-
-        pieces.sort_unstable_by_key(|x| x.0);
-
-        let io_vector: Vec<_> = pieces.iter().map(|x| IoSlice::new(&x.1)).collect();
-
-        let mut file = File::create(save_to).expect("Failed to open file");
-        file.write_vectored(&io_vector).unwrap();
-        file.flush().expect("Failed to flush file");
+        save_torrent_to_file(info, peers, save_to);
         println!("Downloaded {} to {}.", torrent_info_path, save_to);
     } else if command == "magnet_parse" {
         let magnet_link = &args[2];
@@ -105,25 +69,76 @@ fn main() {
         let magnet_link = parse_magnet_link_url(magnet_link);
 
         println!("Tracker URL: {}", magnet_link.tracker_url);
-        println!("Info Hash: {}", magnet_link.hash);
+        println!("Info Hash: {}", hex::encode(magnet_link.hash));
     } else if command == "magnet_info" {
         let magnet_link = &args[2];
 
         let magnet_link = parse_magnet_link_url(magnet_link);
 
         println!("Tracker URL: {}", magnet_link.tracker_url);
-        println!("Info Hash: {}", magnet_link.hash);
+        println!("Info Hash: {}", hex::encode(magnet_link.hash));
     } else if command == "magnet_handshake" {
-        let magnet_link = &args[2];
+        let magnet_link_url = &args[2];
 
-        MetaInfo::from_magnet_link_url(magnet_link);
-    } else if command == "magnet_info" {
-        let magnet_link = &args[2];
+        let magnet_link = parse_magnet_link_url(magnet_link_url);
 
-        MetaInfo::from_magnet_link_url(magnet_link);
+        // some random number, because we don't know the length before fetching metadata
+        let peers = discover_peers(&magnet_link.hash, 999, &magnet_link.tracker_url);
+
+        let peer_for_metadata = peers.first().unwrap();
+
+        let info = MetaInfo::from_magnet_link(&magnet_link, peer_for_metadata);
+
+        let file_name = info
+            .file_name
+            .clone()
+            .unwrap_or(String::from("missing_file_name"));
+
+        save_torrent_to_file(info, peers, &file_name);
     } else {
         println!("unknown command: {}", command)
     }
+}
+
+fn save_torrent_to_file(info: MetaInfo, peers: Vec<String>, save_to: &String) {
+    let pieces_count = int_div_with_ceil(info.length, info.piece_length);
+
+    let pieces_indexes: Vec<_> = (0..pieces_count).collect();
+    let chunk_size: usize = int_div_with_ceil(pieces_count, peers.len());
+    let chunks_piece_indexes = pieces_indexes.chunks(chunk_size);
+
+    let jobs: Vec<_> = chunks_piece_indexes.zip(peers.into_iter()).collect();
+
+    println!("Scheduled piece indexes to download per peer {:?}", jobs);
+
+    let mut pieces: Vec<_> = jobs
+        .into_par_iter()
+        .map(|(indexes, peer)| {
+            indexes
+                .into_iter()
+                .map(|piece_index| {
+                    let result = download_piece(&peer, &info, *piece_index);
+                    println!(
+                        "Peer {} downloaded {}/{}",
+                        peer,
+                        piece_index + 1,
+                        pieces_count
+                    );
+                    return result;
+                })
+                .collect::<Vec<_>>()
+        })
+        .flatten()
+        .collect();
+
+    pieces.sort_unstable_by_key(|x| x.0);
+
+    let io_vector: Vec<_> = pieces.iter().map(|x| IoSlice::new(&x.1)).collect();
+
+    let mut file = File::create(save_to).expect("Failed to open file");
+    file.write_vectored(&io_vector).unwrap();
+    file.flush().expect("Failed to flush file");
+    println!("Saved torrent to {}", save_to);
 }
 
 fn int_div_with_ceil(a: usize, b: usize) -> usize {

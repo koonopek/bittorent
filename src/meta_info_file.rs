@@ -8,18 +8,20 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     bencode::{self, decode_bencoded_value, BenDecodeErrors},
-    discover_peers::discover_peers,
-    magnet_link::parse_magnet_link_url,
+    magnet_link::MagnetLink,
     peer_connection::{MessageType, PeerConnection},
     sha1_it,
 };
 
+#[derive(Debug)]
 pub struct MetaInfo {
     pub tracker_url: String,
     pub length: usize,
     pub hash: Vec<u8>,
     pub piece_length: usize,
+    // FIXME: sub optimal this should be Vec<Vec<u8>>
     pub piece_hashes: Vec<String>,
+    pub file_name: Option<String>,
 }
 
 impl Display for MetaInfo {
@@ -81,21 +83,13 @@ impl MetaInfo {
             length: length as usize,
             hash: hash.to_vec(),
             piece_length: piece_length as usize,
+            file_name: Option::None,
             piece_hashes: pieces,
         };
     }
 
-    pub fn from_magnet_link_url(magnet_link_url: &str) -> Self {
-        let magnet_link = parse_magnet_link_url(magnet_link_url);
-
-        let hash_bytes = hex::decode(&magnet_link.hash).expect("failed to decode magnet link hash");
-
-        // some random number, because we don't know the length before fetching metadata
-        let peers = discover_peers(&hash_bytes, 999, &magnet_link.tracker_url);
-
-        let peer = peers.first().unwrap();
-
-        let mut peer_connection = PeerConnection::handshake(peer, &hash_bytes, true);
+    pub fn from_magnet_link(magnet_link: &MagnetLink, peer: &String) -> Self {
+        let mut peer_connection = PeerConnection::handshake(peer, &magnet_link.hash, true);
 
         let message = peer_connection.read_message();
         assert_eq!(message.message_type, MessageType::BitField);
@@ -142,16 +136,37 @@ impl MetaInfo {
         let message = peer_connection.read_message();
         assert_eq!(message.message_type, MessageType::Extended);
 
-        let response = bencode::decode_bencoded_value(&mut message.payload.into_iter()).unwrap();
+        let response =
+            bencode::decode_bencoded_value(&mut message.payload.clone().into_iter()).unwrap();
+        // FIXME: here could be multiple pieces
+        let piece_length = response["total_size"].as_i64().unwrap();
 
-        dbg!(response);
+        let (_, piece_data) = message
+            .payload
+            .split_at(message.payload.len() - piece_length as usize);
+
+        // FIXME: not optimal
+        let piece_content =
+            bencode::decode_bencoded_value(&mut piece_data.to_vec().into_iter()).unwrap();
+
+        // dbg!(piece_content);
+        let hash = sha1_it(&piece_data.to_vec());
+
+        assert_eq!(&hash, &magnet_link.hash);
 
         return MetaInfo {
-            tracker_url: magnet_link.tracker_url.clone(),
-            length: 0,
-            hash: hash_bytes.to_vec(),
-            piece_length: 0,
-            piece_hashes: Vec::new(),
+            tracker_url: magnet_link.tracker_url.to_owned(),
+            length: piece_content["length"].as_i64().unwrap() as usize,
+            hash: hash,
+            file_name: Some(String::from(piece_content["name"].as_str().unwrap())),
+            piece_length: piece_content["piece length"].as_i64().unwrap() as usize,
+            piece_hashes: piece_content["pieces"]
+                .as_str()
+                .unwrap()
+                .as_bytes()
+                .chunks(20)
+                .map(|x| hex::encode(x))
+                .collect(),
         };
     }
 }
